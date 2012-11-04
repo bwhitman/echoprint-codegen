@@ -80,7 +80,7 @@ bool AudioRealTime::ProcessFilePointer(int pFile) {
         printf("Asked to read %d samples, got %d bytes / %d samples \n", nSamplesPerChunk, bytesRead, samplesRead);
         _NumberSamples += samplesRead;
         vChunks.push_back(pChunk);
-    } while ((samplesRead > 0) && (_NumberSamples < ((int)Params::AudioStreamInput::SamplingRate * _Seconds));
+    } while ((samplesRead > 0) && (_NumberSamples < ((int)Params::AudioStreamInput::SamplingRate * _Seconds)));
     printf("Done listening. samplesRead %d, _NumberSamples %d, target samples %d", samplesRead, _NumberSamples, ((int)Params::AudioStreamInput::SamplingRate * _Seconds));
 
     // Convert from shorts to 16-bit floats and copy into sample buffer.
