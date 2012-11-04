@@ -24,7 +24,7 @@ public:
     AudioRealTime();
     virtual ~AudioRealTime();
     virtual bool ProcessRealTime_OSS(int duration);
-    //virtual bool ProcessRealTime_ALSA(int duration);
+    virtual bool ProcessRealTime_ALSA(int duration);
     std::string GetName() {return "real time in";}
     bool ProcessFilePointer_OSS(int pFile);
     //bool ProcessFilePointer_ALSA(int pFile);

@@ -120,7 +120,7 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
 
     if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
         auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
-        pAudio->ProcessRealTime_OSS(duration);
+        pAudio->ProcessRealTime_ALSA(duration);
         int numSamples = pAudio->getNumSamples();
 
         if (numSamples < 1) {
