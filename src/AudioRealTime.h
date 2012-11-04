@@ -29,13 +29,11 @@ public:
     int getNumSamples() const {return _NumberSamples;}
     const float* getSamples() {return _pSamples;}
     double getDuration() { return (double)getNumSamples() / Params::AudioStreamInput::SamplingRate; }
-    virtual bool IsSupported(const char* pFileName); //Everything ffmpeg can do, by default
-    int GetOffset() const { return _Offset_s;}
     int GetSeconds() const { return _Seconds;}
+
 protected:
     float* _pSamples;
     uint _NumberSamples;
-    int _Offset_s;
     int _Seconds;
 
 };
