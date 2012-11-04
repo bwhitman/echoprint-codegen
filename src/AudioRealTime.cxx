@@ -62,11 +62,9 @@ bool AudioRealTime::ProcessRealTime(int duration) {
     dummy = rate;
     if (-1 == ioctl(fp, SNDCTL_DSP_SPEED, &dummy) || dummy != rate) { perror("ioctl SNDCTL_DSP_SPEED"); exit(-1); }
 
-    bool ok;
     bool did_work = ProcessFilePointer(fp);
-    bool succeeded = !close(fp);
-    ok = did_work && succeeded;
-    return ok;
+    close(fp);
+    return did_work;
 }
 
 
