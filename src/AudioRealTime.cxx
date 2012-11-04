@@ -50,16 +50,16 @@ bool AudioRealTime::ProcessRealTime(int duration) {
     int stereo = 0; // no stereo mode (1 channel)
     int format = AFMT_S16_LE; // 16-bit signed (little endian), this one produces garbled sound...
     int fp = open("/dev/dsp", O_RDONLY, 0);
-    if (-1 == fp) { perror("open"); }
+    if (-1 == fp) { perror("open"); exit(); }
 
     dummy = format;
-    if (-1 == ioctl(fp, SNDCTL_DSP_SETFMT, &dummy) || dummy != format) { perror("ioctl SNDCTL_DSP_SETFMT"); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_SETFMT, &dummy) || dummy != format) { perror("ioctl SNDCTL_DSP_SETFMT"); exit(); }
     dummy = channels;
-    if (-1 == ioctl(fp, SNDCTL_DSP_CHANNELS, &dummy) || dummy != channels) { perror("ioctl SNDCTL_DSP_CHANNELS"); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_CHANNELS, &dummy) || dummy != channels) { perror("ioctl SNDCTL_DSP_CHANNELS"); exit(); }
     dummy = stereo;
-    if (-1 == ioctl(fp, SNDCTL_DSP_STEREO, &dummy) || dummy != stereo) { perror("ioctl SNDCTL_DSP_STEREO"); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_STEREO, &dummy) || dummy != stereo) { perror("ioctl SNDCTL_DSP_STEREO"); exit(); }
     dummy = rate;
-    if (-1 == ioctl(fp, SNDCTL_DSP_SPEED, &dummy) || dummy != rate) { perror("ioctl SNDCTL_DSP_SPEED"); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_SPEED, &dummy) || dummy != rate) { perror("ioctl SNDCTL_DSP_SPEED"); exit(); }
 
     bool ok;
     bool did_work = ProcessFilePointer(fp);
@@ -72,13 +72,13 @@ bool AudioRealTime::ProcessRealTime(int duration) {
 bool AudioRealTime::ProcessFilePointer(int pFile) {
     uint targetSampleLength = (uint) Params::AudioStreamInput::SamplingRate * _Seconds;
     short * pShorts = new short[targetSampleLength];
-    uint samplesRead = 0;
+    int samplesRead = 0;
     uint i;
     do {
         samplesRead = read(pFile, pShorts + _NumberSamples, targetSampleLength);
         printf("Asked to read %d samples, got %d\n", targetSampleLength, samplesRead);
         _NumberSamples += samplesRead;
-        if (samplesRead <= 0) { perror("read"); }
+        if (samplesRead <= 0) { perror("read"); exit(); }
     } while (samplesRead > 0);
 
 
