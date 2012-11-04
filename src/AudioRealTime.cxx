@@ -28,6 +28,7 @@
 #include "Common.h"
 #include "Params.h"
 
+//#include <alsa/asoundlib.h>
 
 
 using std::string;
@@ -41,11 +42,11 @@ AudioRealTime::~AudioRealTime() {
 }
 
 
-bool AudioRealTime::ProcessRealTime(int duration) {
+bool AudioRealTime::ProcessRealTime_OSS(int duration) {
     // Set up OSS
     printf("asking to read %d seconds\n", duration);
     _Seconds = duration;
-    int rate = (int)Params::AudioStreamInput::SamplingRate;
+    int rate = 22050; /*(int)Params::AudioStreamInput::SamplingRate;*/
     int dummy; // just for ioctl    
     int channels = 1; 
     int stereo = 0; 
@@ -68,7 +69,7 @@ bool AudioRealTime::ProcessRealTime(int duration) {
 }
 
 
-bool AudioRealTime::ProcessFilePointer(int pFile) {
+bool AudioRealTime::ProcessFilePointer_OSS(int pFile) {
     std::vector<short*> vChunks;
     uint nSamplesPerChunk = (uint) Params::AudioStreamInput::SamplingRate * Params::AudioStreamInput::SecondsPerRealTimeChunk;
     uint samplesRead = 0;

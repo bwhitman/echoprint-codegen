@@ -23,9 +23,11 @@ class AudioRealTime {
 public:
     AudioRealTime();
     virtual ~AudioRealTime();
-    virtual bool ProcessRealTime(int duration);
-    std::string GetName() {return "direct buffer";}
-    bool ProcessFilePointer(int pFile);
+    virtual bool ProcessRealTime_OSS(int duration);
+    //virtual bool ProcessRealTime_ALSA(int duration);
+    std::string GetName() {return "real time in";}
+    bool ProcessFilePointer_OSS(int pFile);
+    //bool ProcessFilePointer_ALSA(int pFile);
     int getNumSamples() const {return _NumberSamples;}
     const float* getSamples() {return _pSamples;}
     double getDuration() { return (double)getNumSamples() / Params::AudioStreamInput::SamplingRate; }
