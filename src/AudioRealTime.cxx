@@ -77,7 +77,7 @@ bool AudioRealTime::ProcessFilePointer(int pFile) {
         short* pChunk = new short[nSamplesPerChunk];
         bytesRead = read(pFile, pChunk, sizeof(short) * nSamplesPerChunk);
         samplesRead = bytesRead / sizeof(short);
-        printf("Asked to read %d samples, got %d bytes / %d samples \n", nSamplesPerChunk, bytesRead, samplesRead);
+        //printf("Asked to read %d samples, got %d bytes / %d samples \n", nSamplesPerChunk, bytesRead, samplesRead);
         _NumberSamples += samplesRead;
         vChunks.push_back(pChunk);
     } while ((samplesRead > 0) && (_NumberSamples < ((int)Params::AudioStreamInput::SamplingRate * _Seconds)));
@@ -98,6 +98,9 @@ bool AudioRealTime::ProcessFilePointer(int pFile) {
         samplesLeft -= numSamples;
         delete [] pChunk, vChunks[i] = NULL;
     }
+    FILE* output = fopen("output.raw", "wb");
+    fwrite(_pSamples, sizeof(float), _NumSamples, output);
+    fclose(output);
     assert(samplesLeft == 0);
 
     return true;
