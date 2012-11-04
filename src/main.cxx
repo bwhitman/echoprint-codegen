@@ -117,11 +117,35 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     response->error = NULL;
     response->codegen = NULL;
     
-    auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
 
     if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
         auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
         pAudio->ProcessRealTime(duration);
+        int numSamples = pAudio->getNumSamples();
+
+        if (numSamples < 1) {
+            char* output = (char*) malloc(16384);
+            sprintf(output,"{\"error\":\"could not decode\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
+                tag,
+                escape(filename).c_str());
+            response->error = output;
+            return response;
+        }
+        t1 = now() - t1;
+        double t2 = now();
+        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
+        t2 = now() - t2;
+    
+        response->t1 = t1;
+        response->t2 = t2;
+        response->numSamples = numSamples;
+        response->codegen = pCodegen;
+        response->start_offset = start_offset;
+        response->duration = duration;
+        response->tag = tag;
+        response->filename = filename;
+        return response;
+
     } else {
         auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
         pAudio->ProcessFile(filename, start_offset, duration);
@@ -133,35 +157,33 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
             response->error = output;
             return response;
         }
-    }
 
-
-    int numSamples = pAudio->getNumSamples();
-
-    if (numSamples < 1) {
-        char* output = (char*) malloc(16384);
-        sprintf(output,"{\"error\":\"could not decode\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
-            tag,
-            escape(filename).c_str());
-        response->error = output;
+        int numSamples = pAudio->getNumSamples();
+        if (numSamples < 1) {
+            char* output = (char*) malloc(16384);
+            sprintf(output,"{\"error\":\"could not decode\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
+                tag,
+                escape(filename).c_str());
+            response->error = output;
+            return response;
+        }
+        t1 = now() - t1;
+        double t2 = now();
+        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
+        t2 = now() - t2;
+    
+        response->t1 = t1;
+        response->t2 = t2;
+        response->numSamples = numSamples;
+        response->codegen = pCodegen;
+        response->start_offset = start_offset;
+        response->duration = duration;
+        response->tag = tag;
+        response->filename = filename;
+        
         return response;
     }
-    t1 = now() - t1;
-
-    double t2 = now();
-    Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
-    t2 = now() - t2;
-    
-    response->t1 = t1;
-    response->t2 = t2;
-    response->numSamples = numSamples;
-    response->codegen = pCodegen;
-    response->start_offset = start_offset;
-    response->duration = duration;
-    response->tag = tag;
-    response->filename = filename;
-    
-    return response;
+    return NULL;
 }
 
 
