@@ -116,6 +116,8 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     codegen_response_t *response = (codegen_response_t *)malloc(sizeof(codegen_response_t));
     response->error = NULL;
     response->codegen = NULL;
+    
+    auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
 
     if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
         auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
