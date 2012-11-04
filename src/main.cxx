@@ -125,16 +125,16 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     } else {
         auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
         pAudio->ProcessFile(filename, start_offset, duration);
+        if (pAudio.get() == NULL) { // Unable to decode!
+            char* output = (char*) malloc(16384);
+            sprintf(output,"{\"error\":\"could not create decoder\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
+                tag,
+                escape(filename).c_str());
+            response->error = output;
+            return response;
+        }
     }
 
-    if (pAudio.get() == NULL) { // Unable to decode!
-        char* output = (char*) malloc(16384);
-        sprintf(output,"{\"error\":\"could not create decoder\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
-            tag,
-            escape(filename).c_str());
-        response->error = output;
-        return response;
-    }
 
     int numSamples = pAudio->getNumSamples();
 
