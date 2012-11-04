@@ -64,7 +64,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     /* Fill it in with default values. */
     snd_pcm_hw_params_any(handle, params);
     /* Non-interleaved mode */
-    snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_NONINTERLEAVED);
+    snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
 
     /* Signed 16-bit little-endian format */
     snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
@@ -94,7 +94,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     uint sampleCounter = 0;
     while (loops > 0) {
         loops--;
-        rc = snd_pcm_readn(handle, (void*)buffer, frames);
+        rc = snd_pcm_readi(handle, (void*)buffer, frames);
         if (rc == -EPIPE) {
             /* EPIPE means overrun */
             fprintf(stderr, "overrun occurred\n");
