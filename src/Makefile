@@ -18,15 +18,29 @@ LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS)
 LIBNAME=libcodegen.so
 SONAME=$(LIBNAME).$(VERSION_MAJ)
 
-MODULES_LIB = \
-    AudioBufferInput.o \
-    AudioStreamInput.o \
-    Base64.o \
-    Codegen.o \
-    Fingerprint.o \
-    MatrixUtility.o \
-    SubbandAnalysis.o \
-    Whitening.o
+ifeq ($(UNAME),Linux)
+	MODULES_LIB = \
+	    AudioBufferInput.o \
+	    AudioStreamInput.o \
+	    AudioRealTime.o \
+	    Base64.o \
+	    Codegen.o \
+	    Fingerprint.o \
+	    MatrixUtility.o \
+	    SubbandAnalysis.o \
+	    Whitening.o
+else
+	MODULES_LIB = \
+	    AudioBufferInput.o \
+	    AudioStreamInput.o \
+	    Base64.o \
+	    Codegen.o \
+	    Fingerprint.o \
+	    MatrixUtility.o \
+	    SubbandAnalysis.o \
+	    Whitening.o
+endif
+
 MODULES = $(MODULES_LIB) Metadata.o
 
 all: libcodegen echoprint-codegen

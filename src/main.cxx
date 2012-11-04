@@ -15,6 +15,7 @@
 #include <stdexcept>
 
 #include "AudioStreamInput.h"
+#include "AudioRealTime.h"
 #include "Metadata.h"
 #include "Codegen.h"
 #include <string>
@@ -116,8 +117,13 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     response->error = NULL;
     response->codegen = NULL;
 
-    auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
-    pAudio->ProcessFile(filename, start_offset, duration);
+    if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
+        auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
+        pAudio->ProcessRealTime(duration);
+    } else {
+        auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
+        pAudio->ProcessFile(filename, start_offset, duration);
+    }
 
     if (pAudio.get() == NULL) { // Unable to decode!
         char* output = (char*) malloc(16384);
@@ -219,7 +225,7 @@ char *make_json_string(codegen_response_t* response) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s [ filename | -s ] [seconds_start] [seconds_duration] [< file_list (if -s is set)]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [ filename | -s | -r ] [seconds_start] [seconds_duration] [< file_list (if -s is set)]\n", argv[0]);
         exit(-1);
     }
 
@@ -245,6 +251,9 @@ int main(int argc, char** argv) {
                     throw std::runtime_error("Too many files on stdin to process\n");
                 }
             }
+        } else if (strcmp(filename, "-r") == 0) {
+            // Read from line in. Linux only for now
+            files[count++] = "CODEGEN_LINEIN";
         } else files[count++] = filename;
 
         if(count == 0) throw std::runtime_error("No files given.\n");
