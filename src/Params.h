@@ -15,6 +15,7 @@ namespace Params {
         const float SamplingRate = 11025.0f;
         const uint Channels = 1;
         const float SecondsPerChunk = 10.0f;
+        const float SecondsPerRealTimeChunk = 1.0f;
         const uint BytesPerSample = 4; // floats
 #ifdef _LP64
         const uint MaxSamples = 133000000; // 201 minutes @ 11025 samples per second.

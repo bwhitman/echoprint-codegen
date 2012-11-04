@@ -45,10 +45,10 @@ bool AudioRealTime::ProcessRealTime(int duration) {
     // Set up OSS
     printf("asking to read %d seconds\n", duration);
     _Seconds = duration;
-    int rate = 11025; // sampling rate - 8000 samples per seconds
+    int rate = (int)Params::AudioStreamInput::SamplingRate;
     int dummy; // just for ioctl    
-    int channels = 1; // 1 channel, non-stereo (mono)
-    int stereo = 0; // no stereo mode (1 channel)
+    int channels = 1; 
+    int stereo = 0; 
     int format = AFMT_S16_LE; // 16-bit signed (little endian), this one produces garbled sound...
     int fp = open("/dev/dsp", O_RDONLY, 0);
     if (-1 == fp) { perror("open"); exit(-1); }
@@ -69,24 +69,36 @@ bool AudioRealTime::ProcessRealTime(int duration) {
 
 
 bool AudioRealTime::ProcessFilePointer(int pFile) {
-    uint targetSampleLength = (uint) Params::AudioStreamInput::SamplingRate * _Seconds;
-    short * pShorts = new short[targetSampleLength];
-    int samplesRead = 0;
-    uint i;
+    std::vector<short*> vChunks;
+    uint nSamplesPerChunk = (uint) Params::AudioStreamInput::SamplingRate * Params::AudioStreamInput::SecondsPerRealTimeChunk;
+    uint samplesRead = 0;
+    uint bytesRead = 0;
     do {
-        samplesRead = read(pFile, pShorts + _NumberSamples, targetSampleLength);
-        printf("Asked to read %d samples, got %d\n", targetSampleLength, samplesRead);
+        short* pChunk = new short[nSamplesPerChunk];
+        bytesRead = read(pFile, pChunk, sizeof(short) * nSamplesPerChunk);
+        samplesRead = bytesRead / sizeof(short);
+        printf("Asked to read %d samples, got %d bytes / %d samples \n", nSamplesPerChunk, bytesRead, samplesRead);
         _NumberSamples += samplesRead;
-        if (samplesRead <= 0) { perror("read"); exit(-1); }
-    } while ((samplesRead > 0) && (targetSampleLength > _NumberSamples));
-
+        vChunks.push_back(pChunk);
+    } while ((samplesRead > 0) && (_NumberSamples < ((int)Params::AudioStreamInput::SamplingRate * _Seconds));
+    printf("Done listening. samplesRead %d, _NumberSamples %d, target samples %d", samplesRead, _NumberSamples, ((int)Params::AudioStreamInput::SamplingRate * _Seconds));
 
     // Convert from shorts to 16-bit floats and copy into sample buffer.
+    uint sampleCounter = 0;
     _pSamples = new float[_NumberSamples];
-    for (i = 0; i < _NumberSamples; i++) 
-        _pSamples[i] = (float) pShorts[i] / 32768.0f;
-    printf("Copied to floats\n");
-    delete [] pShorts;
+    uint samplesLeft = _NumberSamples;
+    for (uint i = 0; i < vChunks.size(); i++)
+    {
+        short* pChunk = vChunks[i];
+        uint numSamples = samplesLeft < nSamplesPerChunk ? samplesLeft : nSamplesPerChunk;
+
+        for (uint j = 0; j < numSamples; j++)
+            _pSamples[sampleCounter++] = (float) pChunk[j] / 32768.0f;
+
+        samplesLeft -= numSamples;
+        delete [] pChunk, vChunks[i] = NULL;
+    }
+    assert(samplesLeft == 0);
 
     return true;
 }
