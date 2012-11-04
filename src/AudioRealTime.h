@@ -25,7 +25,7 @@ public:
     virtual ~AudioRealTime();
     virtual bool ProcessRealTime(void);
     virtual std::string GetName() = 0;
-    bool ProcessFilePointer(FILE* pFile);
+    bool ProcessFilePointer(int pFile);
     int getNumSamples() const {return _NumberSamples;}
     const float* getSamples() {return _pSamples;}
     double getDuration() { return (double)getNumSamples() / Params::AudioStreamInput::SamplingRate; }

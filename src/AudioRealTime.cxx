@@ -33,10 +33,6 @@
 using std::string;
 
 
-bool AudioRealTime::IsSupported(const char *path) {
-    return true; // Take a crack at anything, by default. The worst thing that will happen is that we fail.
-}
-
 AudioRealTime::AudioRealTime() : _pSamples(NULL), _NumberSamples(0), _Seconds(0) {}
 
 AudioRealTime::~AudioRealTime() {
@@ -66,17 +62,18 @@ bool AudioRealTime::ProcessRealTime() {
 
     bool ok;
     bool did_work = ProcessFilePointer(fp);
-    bool succeeded = !pclose(fp);
+    bool succeeded = !close(fp);
     ok = did_work && succeeded;
     return ok;
 }
 
 
-bool AudioRealTime::ProcessFilePointer(FILE* pFile) {
+bool AudioRealTime::ProcessFilePointer(int pFile) {
     uint targetSampleLength = (uint) Params::AudioStreamInput::SamplingRate * _Seconds;
-    pShorts = new short[targetSampleLength];
+    short * pShorts = new short[targetSampleLength];
     int offset = 0;
     uint samplesRead = 0;
+    uint i;
     do {
         samplesRead = read(pFile, pShorts + _NumberSamples, targetSampleLength);
         printf("Asked to read %d samples, got %d\n", targetSampleLength, samplesRead);
@@ -87,7 +84,7 @@ bool AudioRealTime::ProcessFilePointer(FILE* pFile) {
 
     // Convert from shorts to 16-bit floats and copy into sample buffer.
     _pSamples = new float[_NumberSamples];
-    for (uint i = 0; i < _NumberSamples); i++) 
+    for (i = 0; i < _NumberSamples; i++) 
         _pSamples[i] = (float) pShorts[i] / 32768.0f;
 
     delete [] pShorts;
