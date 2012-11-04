@@ -41,8 +41,9 @@ AudioRealTime::~AudioRealTime() {
 }
 
 
-bool AudioRealTime::ProcessRealTime() {
+bool AudioRealTime::ProcessRealTime(int duration) {
     // Set up OSS
+    _Seconds = duration;
     int rate = 11025; // sampling rate - 8000 samples per seconds
     int dummy; // just for ioctl    
     int channels = 1; // 1 channel, non-stereo (mono)
