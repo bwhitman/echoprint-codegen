@@ -71,7 +71,6 @@ bool AudioRealTime::ProcessRealTime() {
 bool AudioRealTime::ProcessFilePointer(int pFile) {
     uint targetSampleLength = (uint) Params::AudioStreamInput::SamplingRate * _Seconds;
     short * pShorts = new short[targetSampleLength];
-    int offset = 0;
     uint samplesRead = 0;
     uint i;
     do {
