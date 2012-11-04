@@ -50,16 +50,16 @@ bool AudioRealTime::ProcessRealTime(int duration) {
     int stereo = 0; // no stereo mode (1 channel)
     int format = AFMT_S16_LE; // 16-bit signed (little endian), this one produces garbled sound...
     int fp = open("/dev/dsp", O_RDONLY, 0);
-    if (-1 == fp) { perror("open"); exit(); }
+    if (-1 == fp) { perror("open"); exit(-1); }
 
     dummy = format;
-    if (-1 == ioctl(fp, SNDCTL_DSP_SETFMT, &dummy) || dummy != format) { perror("ioctl SNDCTL_DSP_SETFMT"); exit(); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_SETFMT, &dummy) || dummy != format) { perror("ioctl SNDCTL_DSP_SETFMT"); exit(-1); }
     dummy = channels;
-    if (-1 == ioctl(fp, SNDCTL_DSP_CHANNELS, &dummy) || dummy != channels) { perror("ioctl SNDCTL_DSP_CHANNELS"); exit(); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_CHANNELS, &dummy) || dummy != channels) { perror("ioctl SNDCTL_DSP_CHANNELS"); exit(-1); }
     dummy = stereo;
-    if (-1 == ioctl(fp, SNDCTL_DSP_STEREO, &dummy) || dummy != stereo) { perror("ioctl SNDCTL_DSP_STEREO"); exit(); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_STEREO, &dummy) || dummy != stereo) { perror("ioctl SNDCTL_DSP_STEREO"); exit(-1); }
     dummy = rate;
-    if (-1 == ioctl(fp, SNDCTL_DSP_SPEED, &dummy) || dummy != rate) { perror("ioctl SNDCTL_DSP_SPEED"); exit(); }
+    if (-1 == ioctl(fp, SNDCTL_DSP_SPEED, &dummy) || dummy != rate) { perror("ioctl SNDCTL_DSP_SPEED"); exit(-1); }
 
     bool ok;
     bool did_work = ProcessFilePointer(fp);
@@ -78,7 +78,7 @@ bool AudioRealTime::ProcessFilePointer(int pFile) {
         samplesRead = read(pFile, pShorts + _NumberSamples, targetSampleLength);
         printf("Asked to read %d samples, got %d\n", targetSampleLength, samplesRead);
         _NumberSamples += samplesRead;
-        if (samplesRead <= 0) { perror("read"); exit(); }
+        if (samplesRead <= 0) { perror("read"); exit(-1); }
     } while (samplesRead > 0);
 
 
