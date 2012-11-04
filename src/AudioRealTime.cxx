@@ -99,7 +99,7 @@ bool AudioRealTime::ProcessFilePointer(int pFile) {
         delete [] pChunk, vChunks[i] = NULL;
     }
     FILE* output = fopen("output.raw", "wb");
-    fwrite(_pSamples, sizeof(float), _NumSamples, output);
+    fwrite(_pSamples, sizeof(float), _NumberSamples, output);
     fclose(output);
     assert(samplesLeft == 0);
 
