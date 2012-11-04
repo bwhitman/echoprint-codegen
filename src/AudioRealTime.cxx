@@ -59,22 +59,28 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         fprintf(stderr, "unable to open pcm device: %s\n", snd_strerror(rc));
         exit(1);
     }
-
-    snd_pcm_hw_params_alloca(&params);
+    int err;
+    err = snd_pcm_hw_params_alloca(&params);
+    fprintf(stderr, "alloc %d\n", err);
     /* Fill it in with default values. */
-    snd_pcm_hw_params_any(handle, params);
-    /* Non-interleaved mode */
-    snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-
+    err = snd_pcm_hw_params_any(handle, params);
+    fprintf(stderr, "params %d\n", err);
+    /* interleaved mode */
+    err = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+    fprintf(stderr, "access %d\n", err);
     /* Signed 16-bit little-endian format */
-    snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
-    snd_pcm_hw_params_set_channels(handle, params, 1);
+    err = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+    fprintf(stderr, "form %d\n", err);
+    err = snd_pcm_hw_params_set_channels(handle, params, 1);
+    fprintf(stderr, "chan %d\n", err);
     val = 11025;
-    snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
+    err = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
+    fprintf(stderr, "rate %d\n", err);
 
     /* Set period size to 32 frames. */
     frames = 32;
-    snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
+    err = snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
+    fprintf(stderr, "frames %d\n", err);
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(handle, params);
