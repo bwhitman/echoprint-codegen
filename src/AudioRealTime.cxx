@@ -43,6 +43,7 @@ AudioRealTime::~AudioRealTime() {
 
 bool AudioRealTime::ProcessRealTime(int duration) {
     // Set up OSS
+    printf("asking to read %d seconds\n", duration);
     _Seconds = duration;
     int rate = 11025; // sampling rate - 8000 samples per seconds
     int dummy; // just for ioctl    
@@ -79,14 +80,14 @@ bool AudioRealTime::ProcessFilePointer(int pFile) {
         printf("Asked to read %d samples, got %d\n", targetSampleLength, samplesRead);
         _NumberSamples += samplesRead;
         if (samplesRead <= 0) { perror("read"); exit(-1); }
-    } while (samplesRead > 0);
+    } while ((samplesRead > 0) && (targetSampleLength > _NumberSamples))
 
 
     // Convert from shorts to 16-bit floats and copy into sample buffer.
     _pSamples = new float[_NumberSamples];
     for (i = 0; i < _NumberSamples; i++) 
         _pSamples[i] = (float) pShorts[i] / 32768.0f;
-
+    printf("Copied to floats\n");
     delete [] pShorts;
 
     return true;
