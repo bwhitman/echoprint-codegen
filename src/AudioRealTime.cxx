@@ -80,7 +80,7 @@ bool AudioRealTime::ProcessFilePointer(int pFile) {
         printf("Asked to read %d samples, got %d\n", targetSampleLength, samplesRead);
         _NumberSamples += samplesRead;
         if (samplesRead <= 0) { perror("read"); exit(-1); }
-    } while ((samplesRead > 0) && (targetSampleLength > _NumberSamples))
+    } while ((samplesRead > 0) && (targetSampleLength > _NumberSamples));
 
 
     // Convert from shorts to 16-bit floats and copy into sample buffer.
