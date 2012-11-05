@@ -14,11 +14,11 @@ TAGLIB_CFLAGS=`taglib-config --cflags`
 TAGLIB_LIBS=`taglib-config --libs`
 CXXFLAGS=-Wall $(BOOST_CFLAGS) $(TAGLIB_CFLAGS) -fPIC $(OPTFLAGS)
 CFLAGS=-Wall -fPIC $(OPTFLAGS)
-LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread -lasound $(OPTFLAGS)
 LIBNAME=libcodegen.so
 SONAME=$(LIBNAME).$(VERSION_MAJ)
 
 ifeq ($(UNAME),Linux)
+	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread -lasound $(OPTFLAGS)
 	MODULES_LIB = \
 	    AudioBufferInput.o \
 	    AudioStreamInput.o \
@@ -30,6 +30,7 @@ ifeq ($(UNAME),Linux)
 	    SubbandAnalysis.o \
 	    Whitening.o
 else
+	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS)
 	MODULES_LIB = \
 	    AudioBufferInput.o \
 	    AudioStreamInput.o \

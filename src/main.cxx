@@ -15,7 +15,9 @@
 #include <stdexcept>
 
 #include "AudioStreamInput.h"
-#include "AudioRealTime.h"
+#ifdef __linux__
+    #include "AudioRealTime.h"
+#endif
 #include "Metadata.h"
 #include "Codegen.h"
 #include <string>
@@ -117,25 +119,15 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     response->error = NULL;
     response->codegen = NULL;
     
-
+    #ifdef __linux__
     if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
         auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
         pAudio->ProcessRealTime_ALSA(duration);
         int numSamples = pAudio->getNumSamples();
-
-        if (numSamples < 1) {
-            char* output = (char*) malloc(16384);
-            sprintf(output,"{\"error\":\"could not decode\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
-                tag,
-                escape(filename).c_str());
-            response->error = output;
-            return response;
-        }
         t1 = now() - t1;
         double t2 = now();
         Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
         t2 = now() - t2;
-    
         response->t1 = t1;
         response->t2 = t2;
         response->numSamples = numSamples;
@@ -145,8 +137,8 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
         response->tag = tag;
         response->filename = filename;
         return response;
-
     } else {
+    #endif
         auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
         pAudio->ProcessFile(filename, start_offset, duration);
         if (pAudio.get() == NULL) { // Unable to decode!
@@ -182,7 +174,9 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
         response->filename = filename;
         
         return response;
+    #ifdef __linux__
     }
+    #endif
     return NULL;
 }
 

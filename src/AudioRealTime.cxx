@@ -4,7 +4,6 @@
 //
 
 
-
 #include <stddef.h>
 #include <stdio.h>
 #include <iostream>
@@ -44,19 +43,15 @@ AudioRealTime::~AudioRealTime() {
 bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     /* Open PCM device for recording (capture). */
     long loops;
-    int rc;
-    int size;
+    int rc, dir;
+    unsigned int val, i;
     snd_pcm_t *handle;
     snd_pcm_hw_params_t *params;
-    unsigned int val;
-    int dir;
-    uint i;
-    int er;
+    snd_pcm_uframes_t frames;
+    char *buffer;
 
     _Seconds = duration;
 
-    snd_pcm_uframes_t frames;
-    char *buffer;
 
     rc = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 0);
     if (rc < 0) {
@@ -64,34 +59,15 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         exit(1);
     }
 
-
-
     snd_pcm_hw_params_alloca(&params);
-    //fprintf(stderr, "alloc %d\n", er);
-
-    /* Fill it in with default values. */
-    er = snd_pcm_hw_params_any(handle, params);
-    fprintf(stderr, "params %d\n", er);
-
-    /* interleaved mode */
-    er = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    fprintf(stderr, "access %d\n", er);
-
-    /* Signed 16-bit little-endian format */
-    er = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
-    fprintf(stderr, "form %d\n", er);
-
-    er = snd_pcm_hw_params_set_channels(handle, params, 2);
-    fprintf(stderr, "chan %d %s\n", er, snd_strerror(er));
-
+    snd_pcm_hw_params_any(handle, params);
+    snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+    snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+    snd_pcm_hw_params_set_channels(handle, params, 2);
     val = (int)Params::AudioStreamInput::SamplingRate;
-    er = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
-    fprintf(stderr, "rate %d\n", er);
-
-    /* Set period size to 32 frames. */
+    snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
     frames = 32;
-    er = snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
-    fprintf(stderr, "frames %d\n", er);
+    snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(handle, params);
@@ -102,16 +78,11 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
 
     /* Use a buffer large enough to hold one period */
     snd_pcm_hw_params_get_period_size(params, &frames, &dir);
-    size = frames * 4; /* 2 bytes/sample, 2 channel */
-    buffer = (char *) malloc(size);
-    fprintf(stderr, "buffer size is %d from %d frames\n", size, frames);
-
-    _pSamples = new float[_Seconds * (int)Params::AudioStreamInput::SamplingRate];
-
-    /* We want to loop for 5 seconds */
+    buffer = (char *) malloc(frames * 4); /* 2 bytes / sample, 2 channels */
+    _pSamples = new float[(_Seconds+1) * (int)Params::AudioStreamInput::SamplingRate];
     snd_pcm_hw_params_get_period_time(params, &val, &dir);
     loops = (1000000*_Seconds) / val;
-    fprintf(stderr, "loops is %d from %d Seconds and val %d\n", loops, _Seconds, val);
+
     uint sampleCounter = 0;
     while (loops > 0) {
         loops--;
@@ -132,10 +103,6 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
 
     _NumberSamples = sampleCounter;
 
-    FILE* output = fopen("output.raw", "wb");
-    fwrite(_pSamples, sizeof(float), _NumberSamples, output);
-    fclose(output);
-
     snd_pcm_drain(handle);
     snd_pcm_close(handle);
     free(buffer);
@@ -144,13 +111,12 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
 
 bool AudioRealTime::ProcessRealTime_OSS(int duration) {
     // Set up OSS
-    printf("asking to read %d seconds\n", duration);
     _Seconds = duration;
     int rate = (int)Params::AudioStreamInput::SamplingRate;
     int dummy; // just for ioctl    
     int channels = 1; 
     int stereo = 0; 
-    int format = AFMT_S16_LE; // 16-bit signed (little endian), this one produces garbled sound...
+    int format = AFMT_S16_LE; 
     int fp = open("/dev/dsp", O_RDONLY, 0);
     if (-1 == fp) { perror("open"); exit(-1); }
 
@@ -160,6 +126,8 @@ bool AudioRealTime::ProcessRealTime_OSS(int duration) {
     if (-1 == ioctl(fp, SNDCTL_DSP_CHANNELS, &dummy) || dummy != channels) { perror("ioctl SNDCTL_DSP_CHANNELS"); exit(-1); }
     dummy = stereo;
     if (-1 == ioctl(fp, SNDCTL_DSP_STEREO, &dummy) || dummy != stereo) { perror("ioctl SNDCTL_DSP_STEREO"); exit(-1); }
+
+    // On my board the SNDCTL_DSP_SPEED setting returns the correct rate but keeps it at 8000Hz no matter what I say. So this doesn't work.
     dummy = rate;
     if (-1 == ioctl(fp, SNDCTL_DSP_SPEED, &dummy) || dummy != rate) { perror("ioctl SNDCTL_DSP_SPEED"); exit(-1); }
 
@@ -178,11 +146,9 @@ bool AudioRealTime::ProcessFilePointer_OSS(int pFile) {
         short* pChunk = new short[nSamplesPerChunk];
         bytesRead = read(pFile, pChunk, sizeof(short) * nSamplesPerChunk);
         samplesRead = bytesRead / sizeof(short);
-        //printf("Asked to read %d samples, got %d bytes / %d samples \n", nSamplesPerChunk, bytesRead, samplesRead);
         _NumberSamples += samplesRead;
         vChunks.push_back(pChunk);
     } while ((samplesRead > 0) && (_NumberSamples < ((int)Params::AudioStreamInput::SamplingRate * _Seconds)));
-    printf("Done listening. samplesRead %d, _NumberSamples %d, target samples %d", samplesRead, _NumberSamples, ((int)Params::AudioStreamInput::SamplingRate * _Seconds));
 
     // Convert from shorts to 16-bit floats and copy into sample buffer.
     uint sampleCounter = 0;
@@ -199,11 +165,8 @@ bool AudioRealTime::ProcessFilePointer_OSS(int pFile) {
         samplesLeft -= numSamples;
         delete [] pChunk, vChunks[i] = NULL;
     }
-    FILE* output = fopen("output.raw", "wb");
-    fwrite(_pSamples, sizeof(float), _NumberSamples, output);
-    fclose(output);
-    assert(samplesLeft == 0);
 
+    assert(samplesLeft == 0);
     return true;
 }
 
