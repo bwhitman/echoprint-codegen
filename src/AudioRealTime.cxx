@@ -80,7 +80,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     fprintf(stderr, "form %d\n", er);
 
     er = snd_pcm_hw_params_set_channels(handle, params, 1);
-    fprintf(stderr, "chan %d\n", er);
+    fprintf(stderr, "chan %d %s\n", er, nd_strerror(er));
 
     val = 11025;
     er = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
