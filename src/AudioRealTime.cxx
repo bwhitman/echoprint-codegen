@@ -125,11 +125,9 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         } else if (rc != (int)frames) {
             fprintf(stderr, "short read, read %d frames\n", rc);
         }
-        fprintf(stderr, "Converting from shortbuf to psamples\n");
         short *shortbuf = (short*)buffer;
-        for(i=0;i<frames;i=i+2)
+        for(i=0;i<frames*2;i=i+2)
             _pSamples[sampleCounter++] = (float) shortbuf[i] / 32768.0f;
-        fprintf(stderr, "Done converting this round. sampleCounter is %d\n", sampleCounter);
     }
 
     _NumberSamples = sampleCounter;
