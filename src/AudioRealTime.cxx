@@ -51,43 +51,45 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     unsigned int val;
     int dir;
     uint i;
-    int err;
+    int er;
 
     snd_pcm_uframes_t frames;
     char *buffer;
-    
+
     rc = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 0);
     if (rc < 0) {
         fprintf(stderr, "unable to open pcm device: %s\n", snd_strerror(rc));
         exit(1);
     }
 
-    err = snd_pcm_hw_params_alloca(&params);
-    fprintf(stderr, "alloc %d\n", err);
+
+
+    snd_pcm_hw_params_alloca(&params);
+    //fprintf(stderr, "alloc %d\n", er);
 
     /* Fill it in with default values. */
-    err = snd_pcm_hw_params_any(handle, params);
-    fprintf(stderr, "params %d\n", err);
+    er = snd_pcm_hw_params_any(handle, params);
+    fprintf(stderr, "params %d\n", er);
 
     /* interleaved mode */
-    err = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    fprintf(stderr, "access %d\n", err);
+    er = snd_pcm_hw_params_set_access(handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+    fprintf(stderr, "access %d\n", er);
 
     /* Signed 16-bit little-endian format */
-    err = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
-    fprintf(stderr, "form %d\n", err);
+    er = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
+    fprintf(stderr, "form %d\n", er);
 
-    err = snd_pcm_hw_params_set_channels(handle, params, 1);
-    fprintf(stderr, "chan %d\n", err);
+    er = snd_pcm_hw_params_set_channels(handle, params, 1);
+    fprintf(stderr, "chan %d\n", er);
 
     val = 11025;
-    err = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
-    fprintf(stderr, "rate %d\n", err);
+    er = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
+    fprintf(stderr, "rate %d\n", er);
 
     /* Set period size to 32 frames. */
     frames = 32;
-    err = snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
-    fprintf(stderr, "frames %d\n", err);
+    er = snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
+    fprintf(stderr, "frames %d\n", er);
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(handle, params);
