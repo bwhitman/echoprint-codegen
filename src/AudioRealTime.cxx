@@ -98,7 +98,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         }
         short *shortbuf = (short*)buffer;
         for(i=0;i<frames*2;i=i+2)
-            _pSamples[sampleCounter++] = (float) shortbuf[i] / 32768.0f;
+            _pSamples[sampleCounter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
     }
 
     _NumberSamples = sampleCounter;
