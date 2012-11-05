@@ -54,7 +54,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     int er;
 
     _Seconds = duration;
-    
+
     snd_pcm_uframes_t frames;
     char *buffer;
 
@@ -84,7 +84,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     er = snd_pcm_hw_params_set_channels(handle, params, 2);
     fprintf(stderr, "chan %d %s\n", er, snd_strerror(er));
 
-    val = 11025;
+    val = (int)Params::AudioStreamInput::SamplingRate;
     er = snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
     fprintf(stderr, "rate %d\n", er);
 
@@ -104,10 +104,14 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     snd_pcm_hw_params_get_period_size(params, &frames, &dir);
     size = frames * 4; /* 2 bytes/sample, 2 channel */
     buffer = (char *) malloc(size);
+    fprintf(stderr, "buffer size is %d from %d frames\n", size, frames);
+
+    _pSamples = new float[_Seconds * (int)Params::AudioStreamInput::SamplingRate];
 
     /* We want to loop for 5 seconds */
     snd_pcm_hw_params_get_period_time(params, &val, &dir);
     loops = (1000000*_Seconds) / val;
+    fprintf(stderr, "loops is %d from %d Seconds and val %d\n", loops, _Seconds, val);
     uint sampleCounter = 0;
     while (loops > 0) {
         loops--;
@@ -121,10 +125,11 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         } else if (rc != (int)frames) {
             fprintf(stderr, "short read, read %d frames\n", rc);
         }
-
+        fprintf(stderr, "Converting from shortbuf to psamples\n");
         short *shortbuf = (short*)buffer;
         for(i=0;i<frames;i=i+2)
             _pSamples[sampleCounter++] = (float) shortbuf[i] / 32768.0f;
+        fprintf(stderr, "Done converting this round. sampleCounter is %d\n", sampleCounter);
     }
 
     _NumberSamples = sampleCounter;
