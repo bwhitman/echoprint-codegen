@@ -79,7 +79,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     er = snd_pcm_hw_params_set_format(handle, params, SND_PCM_FORMAT_S16_LE);
     fprintf(stderr, "form %d\n", er);
 
-    er = snd_pcm_hw_params_set_channels(handle, params, 1);
+    er = snd_pcm_hw_params_set_channels(handle, params, 2);
     fprintf(stderr, "chan %d %s\n", er, snd_strerror(er));
 
     val = 11025;
@@ -100,7 +100,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
 
     /* Use a buffer large enough to hold one period */
     snd_pcm_hw_params_get_period_size(params, &frames, &dir);
-    size = frames * 2; /* 2 bytes/sample, 1 channel */
+    size = frames * 4; /* 2 bytes/sample, 2 channel */
     buffer = (char *) malloc(size);
 
     /* We want to loop for 5 seconds */
@@ -121,7 +121,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         }
 
         short *shortbuf = (short*)buffer;
-        for(i=0;i<frames;i++)
+        for(i=0;i<frames;i=i+2)
             _pSamples[sampleCounter++] = (float) shortbuf[i] / 32768.0f;
     }
 
