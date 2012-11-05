@@ -53,6 +53,8 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     uint i;
     int er;
 
+    _Seconds = duration;
+    
     snd_pcm_uframes_t frames;
     char *buffer;
 
