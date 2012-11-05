@@ -132,6 +132,10 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
 
     _NumberSamples = sampleCounter;
 
+    FILE* output = fopen("output.raw", "wb");
+    fwrite(_pSamples, sizeof(float), _NumberSamples, output);
+    fclose(output);
+
     snd_pcm_drain(handle);
     snd_pcm_close(handle);
     free(buffer);
