@@ -114,8 +114,7 @@ AudioRealTime::~AudioRealTime() {
 }
 
 bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
-    PaStreamParameters  inputParameters,
-                        outputParameters;
+    PaStreamParameters  inputParameters;
     PaStream*           stream;
     PaError             err = paNoError;
     paTestData          data;
@@ -123,8 +122,6 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     int                 totalFrames;
     int                 numSamples;
     int                 numBytes;
-    SAMPLE              max, val;
-    double              average;
 
 
     data.maxFrameIndex = totalFrames = duration * SAMPLE_RATE; /* Record for a few seconds. */
@@ -170,12 +167,12 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
 
     Codegen *pCodegen = new Codegen();
     uint offset = 0;
-    uint amount_to_compute = (int)(0.1f * 11025.0);    
+    uint amount_to_compute = (int)(0.5f * 11025.0);    
     float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
     while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
     {
         Pa_Sleep(50);
-        if(data.frameIndex > amount_to_compute) {
+        if((uint)data.frameIndex > amount_to_compute) {
             offset = data.frameIndex - amount_to_compute;
             printf("Calling codegen offset %d frameIndex %d amount %d\n", offset, data.frameIndex, amount_to_compute);
             for(uint j=0;j<amount_to_compute;j++) {
