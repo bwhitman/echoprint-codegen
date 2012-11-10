@@ -168,15 +168,26 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     if( err != paNoError ) goto done;
     printf("\n=== Now recording!! Please speak into the microphone. ===\n"); fflush(stdout);
 
+
+    Codegen *pCodegen = new Codegen();
+    UInt32 offset = 0;
+    UInt32 amount_to_compute = (int)(0.5f * 11025.0);    
+    float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
     while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
     {
         Pa_Sleep(1000);
-        printf("index = %d\n", data.frameIndex ); fflush(stdout);
+        if(data.frameIndex > amount_to_compute) {
+            offset = data.frameIndex - amount_to_compute;
+            printf("Calling codegen offset %d frameIndex %d amount %d\n", offset, data.frameIndex, amount_to_compute);
+            for(uint j=0;j<amount_to_compute;j++) {
+                temp_buffer[j] = data.recordedSamples[offset + j];
+            }
+            pCodegen->callback(temp_buffer, amount_to_compute, offset);
+            printf("Done calling codegen\n");
+        }
     }
-    if( err < 0 ) goto done;
-
+    _NumberSamples = data.frameIndex;
     err = Pa_CloseStream( stream );
-    if( err != paNoError ) goto done;
 
     done:
     return true;
