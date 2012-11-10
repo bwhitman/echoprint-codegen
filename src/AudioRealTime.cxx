@@ -17,7 +17,7 @@
 #include <winsock.h>
 #define POPEN_MODE "rb"
 #endif
-
+#include "Codegen.h"
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -84,6 +84,10 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     loops = (1000000*_Seconds) / val;
 
     uint sampleCounter = 0;
+
+    float *temp_buffer = (float*)malloc(sizeof(float) * frames);
+    Codegen *pCodegen = new Codegen();
+
     while (loops > 0) {
         loops--;
         rc = snd_pcm_readi(handle, (void*)buffer, frames);
@@ -97,8 +101,12 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
             fprintf(stderr, "short read, read %d frames\n", rc);
         }
         short *shortbuf = (short*)buffer;
-        for(i=0;i<frames*2;i=i+2)
+        for(i=0;i<frames*2;i=i+2) {
             _pSamples[sampleCounter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
+            temp_buffer[i/2] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
+        }
+        printf("codegen w/ %d frames & offset %d\n", frames, sampleCounter);
+        pCodegen->callback(temp_buffer, frames, sampleCounter);
     }
 
     _NumberSamples = sampleCounter;

@@ -57,8 +57,6 @@ void Whitening::ComputeBlock(int start, int blockSize) {
     float T = 8;
     alpha = 1.0/T;
 
-    printf("computing block satrt %d blocksize %d\n", start, blockSize);
-
     // calculate autocorrelation of current block
 
     for (i = 0; i <= _p; ++i) {
