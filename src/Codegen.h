@@ -41,7 +41,7 @@ public:
 private:
     Fingerprint* computeFingerprint(SubbandAnalysis *pSubbandAnalysis, int start_offset);
     std::string createCodeString(std::vector<FPCode> vCodes);
-
+    int _backpack;
     std::string compress(const std::string& s);
     std::string _CodeString;
     int _NumCodes;

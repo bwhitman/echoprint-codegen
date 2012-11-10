@@ -88,6 +88,7 @@ int serialport_init(const char* serialport, speed_t brate) {
 
 Codegen::Codegen() {
     // real time, don't do much
+    _backpack = serialport_init("/dev/ttyO1", 9600);
 }
 
 Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
@@ -128,19 +129,23 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
 
     uint counter = 0;
     // Draw the thing
+    char * frame = malloc(sizeof(char)*64);
+    for(int i=0;i<64;i++) frame[i] = 15;
     matrix_f subbands = pSubbandAnalysis->getMatrix();
     printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
-    for(unsigned int i=0;i<pSubbandAnalysis->getNumFrames();i++) {
-//        printf("frame %d: ", i);
+    int colcounter = 0;
+    for(unsigned int i=pSubbandAnalysis->getNumFrames()-1;i>=pSubbandAnalysis->getNumFrames()-9;i--) {
+        float max = -32767;
+        int maxi = -1;
         for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
-            if (subbands(j,i) > 0) { 
-//                printf("%d %2.10f ", j, subbands(j,i));
-                counter++; 
+            if (subband(j,i) > max) {
+                maxi = j;
+                max = subband(j,i);
             }
         }
-//        printf("\n");
+        frame[(colcounter * 8) + maxi] = 1;
     }
-    printf("%d > 0 subbands\n", counter);
+    draw_frame(_backpack, frame);
     delete pSubbandAnalysis;
     delete pWhitening;
     delete pAudio;
