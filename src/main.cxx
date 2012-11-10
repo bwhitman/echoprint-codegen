@@ -124,12 +124,15 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
         // UGH I HATE 
         #ifdef __APPLE__
+            printf("Apple\n");
             auto_ptr<AudioRealTimeCoreAudio> pAudio(new AudioRealTimeCoreAudio());
             pAudio->ProcessRealTime(duration);
         #else
+            printf("linux\n");
             auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
             pAudio->ProcessRealTime_ALSA(duration);
         #endif
+        
         printf("get numSamples\n");
         int numSamples = pAudio->getNumSamples();
         printf("get numSamples done %d\n", numSamples);

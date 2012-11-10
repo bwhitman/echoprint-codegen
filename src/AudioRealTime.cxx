@@ -58,6 +58,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         fprintf(stderr, "unable to open pcm device: %s\n", snd_strerror(rc));
         exit(1);
     }
+    printf("1\n");
 
     snd_pcm_hw_params_alloca(&params);
     snd_pcm_hw_params_any(handle, params);
@@ -68,6 +69,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
     frames = 32;
     snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
+    printf("2\n");
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(handle, params);
@@ -75,6 +77,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         fprintf(stderr,"unable to set hw parameters: %s\n", snd_strerror(rc));
         exit(1);
     }
+    printf("3\n");
 
     /* Use a buffer large enough to hold one period */
     snd_pcm_hw_params_get_period_size(params, &frames, &dir);
@@ -87,6 +90,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
 
     float *temp_buffer = (float*)malloc(sizeof(float) * frames);
     Codegen *pCodegen = new Codegen();
+    printf("4 frames is %d\n", frames);
 
     while (loops > 0) {
         loops--;
