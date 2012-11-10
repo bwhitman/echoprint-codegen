@@ -369,7 +369,7 @@ int main(int argc, char** argv) {
         free(attr);
         return 0;
 
-#endif // _WIN32
+//#endif // _WIN32
     }
     catch(std::runtime_error& ex) {
         fprintf(stderr, "%s\n", ex.what());
