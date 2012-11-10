@@ -91,6 +91,8 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     float *temp_buffer = (float*)malloc(sizeof(float) * frames);
     Codegen *pCodegen = new Codegen();
     printf("4 frames is %d\n", frames);
+    uint temp_buffer_counter = 0;
+    uint amount_to_compute = (int)(0.5f * 11025.0);
 
     while (loops > 0) {
         loops--;
@@ -107,10 +109,13 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         short *shortbuf = (short*)buffer;
         for(i=0;i<frames*2;i=i+2) {
             _pSamples[sampleCounter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
-            temp_buffer[i/2] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
+            temp_buffer[temp_buffer_counter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
+            if(temp_buffer_counter == amount_to_compute) {
+                printf("codegen w/ %d frames & offset %d\n", amount_to_compute, sampleCounter);
+                pCodegen->callback(temp_buffer, amount_to_compute, sampleCounter);
+                temp_buffer_counter = 0;
+            }
         }
-        printf("codegen w/ %d frames & offset %d\n", frames, sampleCounter);
-        pCodegen->callback(temp_buffer, frames, sampleCounter);
     }
 
     _NumberSamples = sampleCounter;
