@@ -178,6 +178,9 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     err = Pa_CloseStream( stream );
     if( err != paNoError ) goto done;
 
+    done:
+    return true;
+
 }
 
 bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
