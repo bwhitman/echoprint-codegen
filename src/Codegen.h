@@ -9,6 +9,7 @@
 
 // Entry point for generating codes from PCM data.
 #define ECHOPRINT_VERSION 4.12
+#define VISUALIZE 1
 
 #include <string>
 #include <vector>

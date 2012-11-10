@@ -132,6 +132,8 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     for(int i=0;i<64;i++) frame[i] = 15;
     matrix_f subbands = pSubbandAnalysis->getMatrix();
     printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
+
+    #ifdef VISUALIZE
     int colcounter = 0;
     for(unsigned int i=pSubbandAnalysis->getNumFrames()-1;i>=pSubbandAnalysis->getNumFrames()-9;i--) {
         float max = -32767;
@@ -145,6 +147,7 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
         frame[(colcounter++ * 8) + maxi] = 1;
     }
     draw_frame(_backpack, frame);
+    #endif
     delete pSubbandAnalysis;
     delete pWhitening;
     delete pAudio;
