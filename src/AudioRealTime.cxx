@@ -28,9 +28,82 @@
 #include "Params.h"
 
 #include <alsa/asoundlib.h>
+#include "portaudio.h"
 
 
 using std::string;
+
+
+/* #define SAMPLE_RATE  (17932) // Test failure to open with this value. */
+#define SAMPLE_RATE  (11025)
+#define FRAMES_PER_BUFFER (512)
+#define NUM_CHANNELS    (1)
+#define DITHER_FLAG     (0) /**/
+
+/* Select sample format. */
+#define PA_SAMPLE_TYPE  paFloat32
+typedef float SAMPLE;
+#define SAMPLE_SILENCE  (0.0f)
+#define PRINTF_S_FORMAT "%.8f"
+
+typedef struct
+{
+    int          frameIndex;  /* Index into sample array. */
+    int          maxFrameIndex;
+    SAMPLE      *recordedSamples;
+}
+paTestData;
+
+
+static int recordCallback( const void *inputBuffer, void *outputBuffer,
+                           unsigned long framesPerBuffer,
+                           const PaStreamCallbackTimeInfo* timeInfo,
+                           PaStreamCallbackFlags statusFlags,
+                           void *userData )
+{
+    paTestData *data = (paTestData*)userData;
+    const SAMPLE *rptr = (const SAMPLE*)inputBuffer;
+    SAMPLE *wptr = &data->recordedSamples[data->frameIndex * NUM_CHANNELS];
+    long framesToCalc;
+    long i;
+    int finished;
+    unsigned long framesLeft = data->maxFrameIndex - data->frameIndex;
+
+    (void) outputBuffer; /* Prevent unused variable warnings. */
+    (void) timeInfo;
+    (void) statusFlags;
+    (void) userData;
+
+    if( framesLeft < framesPerBuffer )
+    {
+        framesToCalc = framesLeft;
+        finished = paComplete;
+    }
+    else
+    {
+        framesToCalc = framesPerBuffer;
+        finished = paContinue;
+    }
+
+    if( inputBuffer == NULL )
+    {
+        for( i=0; i<framesToCalc; i++ )
+        {
+            *wptr++ = SAMPLE_SILENCE;  /* left */
+            if( NUM_CHANNELS == 2 ) *wptr++ = SAMPLE_SILENCE;  /* right */
+        }
+    }
+    else
+    {
+        for( i=0; i<framesToCalc; i++ )
+        {
+            *wptr++ = *rptr++;  /* left */
+            if( NUM_CHANNELS == 2 ) *wptr++ = *rptr++;  /* right */
+        }
+    }
+    data->frameIndex += framesToCalc;
+    return finished;
+}
 
 
 AudioRealTime::AudioRealTime() : _pSamples(NULL), _NumberSamples(0), _Seconds(0) {}
@@ -38,6 +111,73 @@ AudioRealTime::AudioRealTime() : _pSamples(NULL), _NumberSamples(0), _Seconds(0)
 AudioRealTime::~AudioRealTime() {
     if (_pSamples != NULL)
         delete [] _pSamples, _pSamples = NULL;
+}
+
+bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
+    PaStreamParameters  inputParameters,
+                        outputParameters;
+    PaStream*           stream;
+    PaError             err = paNoError;
+    paTestData          data;
+    int                 i;
+    int                 totalFrames;
+    int                 numSamples;
+    int                 numBytes;
+    SAMPLE              max, val;
+    double              average;
+
+
+    data.maxFrameIndex = totalFrames = duration * SAMPLE_RATE; /* Record for a few seconds. */
+    data.frameIndex = 0;
+    numSamples = totalFrames * NUM_CHANNELS;
+    numBytes = numSamples * sizeof(SAMPLE);
+    data.recordedSamples = (SAMPLE *) malloc( numBytes ); /* From now on, recordedSamples is initialised. */
+    if( data.recordedSamples == NULL )
+    {
+        printf("Could not allocate record array.\n");
+        goto done;
+    }
+    for( i=0; i<numSamples; i++ ) data.recordedSamples[i] = 0;
+
+    err = Pa_Initialize();
+    if( err != paNoError ) goto done;
+
+    inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
+    if (inputParameters.device == paNoDevice) {
+        fprintf(stderr,"Error: No default input device.\n");
+        goto done;
+    }
+    inputParameters.channelCount = 2;                    /* stereo input */
+    inputParameters.sampleFormat = PA_SAMPLE_TYPE;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
+    inputParameters.hostApiSpecificStreamInfo = NULL;
+
+    /* Record some audio. -------------------------------------------- */
+    err = Pa_OpenStream(
+              &stream,
+              &inputParameters,
+              NULL,                  /* &outputParameters, */
+              SAMPLE_RATE,
+              FRAMES_PER_BUFFER,
+              paClipOff,      /* we won't output out of range samples so don't bother clipping them */
+              recordCallback,
+              &data );
+    if( err != paNoError ) goto done;
+
+    err = Pa_StartStream( stream );
+    if( err != paNoError ) goto done;
+    printf("\n=== Now recording!! Please speak into the microphone. ===\n"); fflush(stdout);
+
+    while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
+    {
+        Pa_Sleep(1000);
+        printf("index = %d\n", data.frameIndex ); fflush(stdout);
+    }
+    if( err < 0 ) goto done;
+
+    err = Pa_CloseStream( stream );
+    if( err != paNoError ) goto done;
+
 }
 
 bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
@@ -109,13 +249,14 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         short *shortbuf = (short*)buffer;
         for(i=0;i<frames*2;i=i+2) {
             _pSamples[sampleCounter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
-            //temp_buffer[temp_buffer_counter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
-            /*if(temp_buffer_counter == amount_to_compute) {
+            temp_buffer[temp_buffer_counter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
+        }
+                    if(temp_buffer_counter == amount_to_compute) {
                 printf("codegen w/ %d frames & offset %d\n", amount_to_compute, sampleCounter);
                 pCodegen->callback(temp_buffer, amount_to_compute, sampleCounter);
                 temp_buffer_counter = 0;
-            }*/
-        }
+            }
+
     }
 
     _NumberSamples = sampleCounter;
