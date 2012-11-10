@@ -130,9 +130,9 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
         #else
             printf("linux\n");
             auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
-            pAudio->ProcessRealTime_ALSA(duration);
+            pAudio->ProcessRealTime_PortAudio(duration);
         #endif
-        
+
         printf("get numSamples\n");
         int numSamples = pAudio->getNumSamples();
         printf("get numSamples done %d\n", numSamples);
