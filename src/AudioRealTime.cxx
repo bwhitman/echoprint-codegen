@@ -109,12 +109,12 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         short *shortbuf = (short*)buffer;
         for(i=0;i<frames*2;i=i+2) {
             _pSamples[sampleCounter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
-            temp_buffer[temp_buffer_counter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
-            if(temp_buffer_counter == amount_to_compute) {
+            //temp_buffer[temp_buffer_counter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
+            /*if(temp_buffer_counter == amount_to_compute) {
                 printf("codegen w/ %d frames & offset %d\n", amount_to_compute, sampleCounter);
                 pCodegen->callback(temp_buffer, amount_to_compute, sampleCounter);
                 temp_buffer_counter = 0;
-            }
+            }*/
         }
     }
 
