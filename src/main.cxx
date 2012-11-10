@@ -17,6 +17,8 @@
 #include "AudioStreamInput.h"
 #ifdef __linux__
     #include "AudioRealTime.h"
+#else
+    #include "AudioRealTimeCoreAudio.h"
 #endif
 #include "Metadata.h"
 #include "Codegen.h"
@@ -119,14 +121,20 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     response->error = NULL;
     response->codegen = NULL;
     
-    #ifdef __linux__
     if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
-        auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
-        pAudio->ProcessRealTime_ALSA(duration);
+        // UGH I HATE 
+        auto_ptr<AudioRealTimeCoreAudio> pAudio(new AudioRealTimeCoreAudio());
+        pAudio->ProcessRealTime(duration);
+        printf("get numSamples\n");
         int numSamples = pAudio->getNumSamples();
+        printf("get numSamples done %d\n", numSamples);
         t1 = now() - t1;
         double t2 = now();
+        printf("get codegen\n");
+
         Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
+        printf("get codegen done\n");
+
         t2 = now() - t2;
         response->t1 = t1;
         response->t2 = t2;
@@ -138,7 +146,6 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
         response->filename = filename;
         return response;
     } else {
-    #endif
         auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
         pAudio->ProcessFile(filename, start_offset, duration);
         if (pAudio.get() == NULL) { // Unable to decode!
@@ -174,9 +181,7 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
         response->filename = filename;
         
         return response;
-    #ifdef __linux__
     }
-    #endif
     return NULL;
 }
 
@@ -276,8 +281,8 @@ int main(int argc, char** argv) {
 
         if(count == 0) throw std::runtime_error("No files given.\n");
 
-
-#ifdef _WIN32
+#ifdef __APPLE__
+        fprintf(stderr, "No threading mode\n");
         // Threading doesn't work in windows yet.
         for(int i=0;i<count;i++) {
             codegen_response_t* response = codegen_file((char*)files[i].c_str(), start_offset, duration, i);
