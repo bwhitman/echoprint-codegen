@@ -22,6 +22,74 @@
 using std::string;
 using std::vector;
 
+
+#ifdef VISUALIZE
+#include <stdio.h>    
+#include <fcntl.h>    
+#include <termios.h> 
+// space between bytes. on my box was not stable at 500us
+#define SLEEP_US 1000
+// Take a 64-char long array of colors and convert into a buf for the LED board & write it to fd
+void draw_frame(int fd, char*frame) {
+    int i=0;
+    char buf = 32;
+    // Write the start frame
+    write(fd, &buf, 1);
+    usleep(SLEEP_US);
+    // Now write the colors
+    for(i=0;i<64;i=i+2) {
+        buf = (frame[i] << 4) | frame[i+1];
+        write(fd, &buf, 1);
+        usleep(SLEEP_US);
+    }
+}
+int serialport_init(const char* serialport, speed_t brate) {
+    struct termios toptions;
+    int fd;
+    fd = open(serialport, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fd == -1)  {
+        perror("init_serialport: Unable to open port ");
+        return -1;
+    }
+    
+    if (tcgetattr(fd, &toptions) < 0) {
+        perror("init_serialport: Couldn't get term attributes");
+        return -1;
+    }
+    cfsetispeed(&toptions, brate);
+    cfsetospeed(&toptions, brate);
+
+    // 8N1
+    toptions.c_cflag &= ~PARENB;
+    toptions.c_cflag &= ~CSTOPB;
+    toptions.c_cflag &= ~CSIZE;
+    toptions.c_cflag |= CS8;
+    // no flow control
+    toptions.c_cflag &= ~CRTSCTS;
+
+    toptions.c_cflag |= CREAD | CLOCAL;  // turn on READ & ignore ctrl lines
+    toptions.c_iflag &= ~(IXON | IXOFF | IXANY); // turn off s/w flow ctrl
+
+    toptions.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // make raw
+    toptions.c_oflag &= ~OPOST; // make raw
+
+    // see: http://unixwiz.net/techtips/termios-vmin-vtime.html
+    toptions.c_cc[VMIN]  = 0;
+    toptions.c_cc[VTIME] = 20;
+    
+    if( tcsetattr(fd, TCSANOW, &toptions) < 0) {
+        perror("init_serialport: Couldn't set term attributes");
+        return -1;
+    }
+
+    return fd;
+}
+#endif
+
+Codegen::Codegen() {
+    // real time, don't do much
+}
+
 Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
     if (Params::AudioStreamInput::MaxSamples < (uint)numSamples)
         throw std::runtime_error("File was too big\n");
@@ -45,6 +113,39 @@ Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
     delete pSubbandAnalysis;
     delete pWhitening;
     delete pAudio;
+}
+
+
+
+string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int offset_samples) {
+    printf("callback with %d samples at %d\n", numSamples, offset_samples);
+    Whitening *pWhitening = new Whitening(pcm, numSamples);
+    pWhitening->Compute();
+    AudioBufferInput *pAudio = new AudioBufferInput();
+    pAudio->SetBuffer(pWhitening->getWhitenedSamples(), pWhitening->getNumSamples());
+    SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
+    pSubbandAnalysis->Compute();
+
+    uint counter = 0;
+    // Draw the thing
+    matrix_f subbands = pSubbandAnalysis->getMatrix();
+    printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
+    for(unsigned int i=0;i<10 /*pSubbandAnalysis->getNumFrames()*/;i++) {
+        printf("frame %d: ", i);
+        for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
+            if (subbands(j,i) > 0) { 
+                printf("%d %2.10f ", j, subbands(j,i));
+                counter++; 
+            }
+        }
+        printf("\n");
+    }
+    printf("%d > 0 subbands\n", counter);
+    delete pSubbandAnalysis;
+    delete pWhitening;
+    delete pAudio;
+    return "";
+
 }
 
 string Codegen::createCodeString(vector<FPCode> vCodes) {

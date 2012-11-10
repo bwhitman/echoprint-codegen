@@ -31,7 +31,9 @@ struct FPCode;
 
 class CODEGEN_API Codegen {
 public:
+    Codegen(); // real time
     Codegen(const float* pcm, unsigned int numSamples, int start_offset);
+    std::string callback(const float *pcm, unsigned int numSamples, unsigned int offset_samples);
 
     std::string getCodeString(){return _CodeString;}
     int getNumCodes(){return _NumCodes;}

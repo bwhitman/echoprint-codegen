@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include "AudioRealTimeCoreAudio.h"
 #include "Common.h"
+#include "Codegen.h"
 #include "Params.h"
 #include "CAStreamBasicDescription.h"
 using std::string;
@@ -135,8 +136,24 @@ bool AudioRealTimeCoreAudio::ProcessRealTime(int duration) {
         status = AudioQueueStart(recordState.queue, NULL);
     }
 
+    Codegen *pCodegen = new Codegen();
+
+    UInt32 offset = 0;
+    UInt32 amount_to_compute = (int)(0.5f * 11025.0);
+    
+    float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
+
     while(recordState.recording) {
-        sleep(0.1);
+        sleep(0.2);
+        if(recordState.lastSampleIndex > amount_to_compute) {
+            offset = recordState.lastSampleIndex - amount_to_compute;
+            printf("Calling codegen\n");
+            for(uint j=0;j<amount_to_compute;j++) {
+                temp_buffer[j] = _pSamples[offset + j];
+            }
+            pCodegen->callback(temp_buffer, amount_to_compute, offset);
+            printf("Done calling codegen\n");
+        }
     }
     _NumberSamples = recordState.lastSampleIndex;
     status = AudioQueueStop(recordState.queue, true);

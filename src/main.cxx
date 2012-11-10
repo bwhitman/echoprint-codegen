@@ -132,14 +132,15 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
         double t2 = now();
         printf("get codegen\n");
 
-        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
-        printf("get codegen done\n");
+//        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
+//        printf("get codegen done\n");
 
         t2 = now() - t2;
         response->t1 = t1;
         response->t2 = t2;
         response->numSamples = numSamples;
-        response->codegen = pCodegen;
+//        response->codegen = pCodegen;
+        response->codegen = NULL;
         response->start_offset = start_offset;
         response->duration = duration;
         response->tag = tag;

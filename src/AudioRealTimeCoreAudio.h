@@ -8,6 +8,7 @@
 #define AUDIOREALTIMECOREAUDIO_H
 #include "Common.h"
 #include "Params.h"
+#include "Codegen.h"
 #include <iostream>
 #include <string>
 #include <math.h>
