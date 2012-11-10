@@ -30,7 +30,7 @@ using std::vector;
 // space between bytes. on my box was not stable at 500us
 #define SLEEP_US 1000
 // Take a 64-char long array of colors and convert into a buf for the LED board & write it to fd
-void draw_frame(int fd, char*frame) {
+static void draw_frame(int fd, char*frame) {
     int i=0;
     char buf = 32;
     // Write the start frame
@@ -43,7 +43,7 @@ void draw_frame(int fd, char*frame) {
         usleep(SLEEP_US);
     }
 }
-int serialport_init(const char* serialport, speed_t brate) {
+static int serialport_init(const char* serialport, speed_t brate) {
     struct termios toptions;
     int fd;
     fd = open(serialport, O_RDWR | O_NOCTTY | O_NDELAY);
@@ -127,9 +127,8 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
     pSubbandAnalysis->Compute();
 
-    uint counter = 0;
     // Draw the thing
-    char * frame = malloc(sizeof(char)*64);
+    char * frame = (char*) malloc(sizeof(char)*64);
     for(int i=0;i<64;i++) frame[i] = 15;
     matrix_f subbands = pSubbandAnalysis->getMatrix();
     printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
@@ -138,12 +137,12 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
         float max = -32767;
         int maxi = -1;
         for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
-            if (subband(j,i) > max) {
+            if (subbands(j,i) > max) {
                 maxi = j;
-                max = subband(j,i);
+                max = subbands(j,i);
             }
         }
-        frame[(colcounter * 8) + maxi] = 1;
+        frame[(colcounter++ * 8) + maxi] = 1;
     }
     draw_frame(_backpack, frame);
     delete pSubbandAnalysis;
