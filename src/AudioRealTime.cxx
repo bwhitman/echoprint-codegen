@@ -147,7 +147,7 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
         fprintf(stderr,"Error: No default input device.\n");
         return false;
     }
-    inputParameters.channelCount = 2;                    /* stereo input */
+    inputParameters.channelCount = 1;                    /* stereo input */
     inputParameters.sampleFormat = PA_SAMPLE_TYPE;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
@@ -166,7 +166,6 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
 
     err = Pa_StartStream( stream );
     if( err != paNoError ) return false;
-    printf("\n=== Now recording!! Please speak into the microphone. ===\n"); fflush(stdout);
 
 
     Codegen *pCodegen = new Codegen();
@@ -175,7 +174,7 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
     while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
     {
-        Pa_Sleep(1000);
+        Pa_Sleep(50);
         if(data.frameIndex > amount_to_compute) {
             offset = data.frameIndex - amount_to_compute;
             printf("Calling codegen offset %d frameIndex %d amount %d\n", offset, data.frameIndex, amount_to_compute);
