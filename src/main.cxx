@@ -287,7 +287,6 @@ int main(int argc, char** argv) {
 
         if(count == 0) throw std::runtime_error("No files given.\n");
 
-#ifdef __APPLE__
         fprintf(stderr, "No threading mode\n");
         // Threading doesn't work in windows yet.
         for(int i=0;i<count;i++) {
@@ -302,7 +301,6 @@ int main(int argc, char** argv) {
         }
         return 0;
 
-#else
 
         // Figure out how many threads to use based on # of cores
         int num_threads = getNumCores();
