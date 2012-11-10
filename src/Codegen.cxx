@@ -130,15 +130,15 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     // Draw the thing
     matrix_f subbands = pSubbandAnalysis->getMatrix();
     printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
-    for(unsigned int i=0;i<10 /*pSubbandAnalysis->getNumFrames()*/;i++) {
-        printf("frame %d: ", i);
+    for(unsigned int i=0;i<pSubbandAnalysis->getNumFrames();i++) {
+//        printf("frame %d: ", i);
         for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
             if (subbands(j,i) > 0) { 
-                printf("%d %2.10f ", j, subbands(j,i));
+//                printf("%d %2.10f ", j, subbands(j,i));
                 counter++; 
             }
         }
-        printf("\n");
+//        printf("\n");
     }
     printf("%d > 0 subbands\n", counter);
     delete pSubbandAnalysis;
