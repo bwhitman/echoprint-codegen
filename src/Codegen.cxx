@@ -131,11 +131,11 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     #ifdef VISUALIZE
     // Draw the thing
     char * frame = (char*) malloc(sizeof(char)*64);
-    for(int i=0;i<64;i++) frame[i] = 15;
+    for(int i=0;i<64;i++) frame[i] = 6;
     matrix_f subbands = pSubbandAnalysis->getMatrix();
     printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
     int colcounter = 0;
-    for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+20) {
+    for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+80) {
         float max = -32767;
         int maxi = -1;
         for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
