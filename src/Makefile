@@ -30,10 +30,11 @@ ifeq ($(UNAME),Linux)
 	    SubbandAnalysis.o \
 	    Whitening.o
 else
-	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS)
+	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS) -framework AudioToolbox
 	MODULES_LIB = \
 	    AudioBufferInput.o \
 	    AudioStreamInput.o \
+	    AudioRealTimeCoreAudio.o \
 	    Base64.o \
 	    Codegen.o \
 	    Fingerprint.o \
