@@ -18,7 +18,7 @@ LIBNAME=libcodegen.so
 SONAME=$(LIBNAME).$(VERSION_MAJ)
 
 ifeq ($(UNAME),Linux)
-	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread -lasound $(OPTFLAGS)
+	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread -lasound $(OPTFLAGS) -lportaudio
 	MODULES_LIB = \
 	    AudioBufferInput.o \
 	    AudioStreamInput.o \
