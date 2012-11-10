@@ -25,6 +25,7 @@ public:
     virtual ~AudioRealTime();
     virtual bool ProcessRealTime_OSS(int duration);
     virtual bool ProcessRealTime_ALSA(int duration);
+    virtual bool ProcessRealTime_PortAudio(int duration);
     std::string GetName() {return "real time in";}
     bool ProcessFilePointer_OSS(int pFile);
     int getNumSamples() const {return _NumberSamples;}
