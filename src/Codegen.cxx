@@ -31,15 +31,15 @@ using std::vector;
 #define SLEEP_US 1000
 // Take a 64-char long array of colors and convert into a buf for the LED board & write it to fd
 static void draw_frame(int fd, char*frame) {
-    int i=0;
+    int j,i=0;
     char buf = 32;
     // Write the start frame
-    write(fd, &buf, 1);
+    j = write(fd, &buf, 1);
     usleep(SLEEP_US);
     // Now write the colors
     for(i=0;i<64;i=i+2) {
         buf = (frame[i] << 4) | frame[i+1];
-        write(fd, &buf, 1);
+        j=write(fd, &buf, 1);
         usleep(SLEEP_US);
     }
 }
