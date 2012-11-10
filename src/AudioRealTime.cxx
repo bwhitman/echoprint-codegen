@@ -135,17 +135,17 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     if( data.recordedSamples == NULL )
     {
         printf("Could not allocate record array.\n");
-        goto done;
+        return false;
     }
     for( i=0; i<numSamples; i++ ) data.recordedSamples[i] = 0;
 
     err = Pa_Initialize();
-    if( err != paNoError ) goto done;
+    if( err != paNoError ) return false;
 
     inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
     if (inputParameters.device == paNoDevice) {
         fprintf(stderr,"Error: No default input device.\n");
-        goto done;
+        return false;
     }
     inputParameters.channelCount = 2;                    /* stereo input */
     inputParameters.sampleFormat = PA_SAMPLE_TYPE;
@@ -162,10 +162,10 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
               paClipOff,      /* we won't output out of range samples so don't bother clipping them */
               recordCallback,
               &data );
-    if( err != paNoError ) goto done;
+    if( err != paNoError ) return false;
 
     err = Pa_StartStream( stream );
-    if( err != paNoError ) goto done;
+    if( err != paNoError ) return false;
     printf("\n=== Now recording!! Please speak into the microphone. ===\n"); fflush(stdout);
 
 
@@ -189,7 +189,6 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     _NumberSamples = data.frameIndex;
     err = Pa_CloseStream( stream );
 
-    done:
     return true;
 
 }
