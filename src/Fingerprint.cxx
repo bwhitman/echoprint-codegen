@@ -181,9 +181,10 @@ uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis) {
 
     // I think i should print out codes here
     _update_codes.resize(_update_onset_counter*6);
-    unsigned char hash_material[5];
+    for(uint i=0;i<_update_onset_counter*6;i++) _update_codes[i] = FPCode(0,0);
+    unsigned char hash_material[5]; for(uint i=0;i<5;i++) hash_material[i] = 0;
     int actual_codes = 0;
-    for(uint i=0;i<5;i++) hash_material[i] = 0;
+    
     for(unsigned char band=0;band<SUBBANDS;band++) {
         if (_update_onset_counter_for_band[band]>2) {
             for(uint onset=0;onset<_update_onset_counter_for_band[band]-2;onset++) {
