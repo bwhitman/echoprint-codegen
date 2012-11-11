@@ -31,40 +31,25 @@
 #include "portaudio.h"
 
 #define PA_ENABLE_DEBUG_OUTPUT false
+#define FRAMES_PER_BUFFER (512)
 
 using std::string;
 
-
-/* #define SAMPLE_RATE  (17932) // Test failure to open with this value. */
-#define SAMPLE_RATE  (11025)
-#define FRAMES_PER_BUFFER (512)
-#define NUM_CHANNELS    (1)
-#define DITHER_FLAG     (0) /**/
-
-/* Select sample format. */
-#define PA_SAMPLE_TYPE  paFloat32
-typedef float SAMPLE;
-#define SAMPLE_SILENCE  (0.0f)
-#define PRINTF_S_FORMAT "%.8f"
-
-typedef struct
-{
+typedef struct {
     int          frameIndex;  /* Index into sample array. */
     int          maxFrameIndex;
     float        *recordedSamples;
-}
-paTestData;
+} paCallbackData;
 
 
 static int recordCallback( const void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
                            const PaStreamCallbackTimeInfo* timeInfo,
                            PaStreamCallbackFlags statusFlags,
-                           void *userData )
-{
-    paTestData *data = (paTestData*)userData;
-    const float *rptr = (const SAMPLE*)inputBuffer;
-    float *wptr = &data->recordedSamples[data->frameIndex * NUM_CHANNELS];
+                           void *userData ) {
+    paCallbackData *data = (paCallbackData*)userData;
+    const float *rptr = (const float*)inputBuffer;
+    float *wptr = &data->recordedSamples[data->frameIndex];
     long framesToCalc;
     long i;
     int finished;
@@ -84,15 +69,9 @@ static int recordCallback( const void *inputBuffer, void *outputBuffer,
     }
 
     if( inputBuffer == NULL ) {
-        for( i=0; i<framesToCalc; i++ ) {
-            *wptr++ = SAMPLE_SILENCE;  /* left */
-            if( NUM_CHANNELS == 2 ) *wptr++ = SAMPLE_SILENCE;  /* right */
-        }
+        for( i=0; i<framesToCalc; i++) *wptr++ = 0; 
     } else {
-        for( i=0; i<framesToCalc; i++ ) {
-            *wptr++ = *rptr++;  /* left */
-            if( NUM_CHANNELS == 2 ) *wptr++ = *rptr++;  /* right */
-        }
+        for( i=0; i<framesToCalc; i++) *wptr++ = *rptr++;
     }
     data->frameIndex += framesToCalc;
     return finished;
@@ -110,16 +89,16 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     PaStreamParameters  inputParameters;
     PaStream*           stream;
     PaError             err = paNoError;
-    paTestData          data;
+    paCallbackData      data;
     int                 totalFrames;
     int                 numSamples;
     int                 numBytes;
 
-    data.maxFrameIndex = totalFrames = duration * SAMPLE_RATE; 
+    data.maxFrameIndex = totalFrames = duration * 11025; 
     data.frameIndex = 0;
-    numSamples = totalFrames * NUM_CHANNELS;
+    numSamples = totalFrames * 1;
     numBytes = numSamples * sizeof(float);
-    _pSamples = (float *) malloc( numBytes ); /* From now on, recordedSamples is initialised. */
+    _pSamples = (float *) malloc(numBytes); 
     data.recordedSamples = _pSamples;
 
     err = Pa_Initialize();
@@ -131,23 +110,15 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
         return false;
     }
 
-    inputParameters.channelCount = 1;                    /* stereo input */
-    inputParameters.sampleFormat = PA_SAMPLE_TYPE;
+    inputParameters.channelCount = 1;
+    inputParameters.sampleFormat = paFloat32;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
 
-    err = Pa_OpenStream(
-              &stream,
-              &inputParameters,
-              NULL,                  /* &outputParameters, */
-              SAMPLE_RATE,
-              FRAMES_PER_BUFFER,
-              paClipOff,      /* we won't output out of range samples so don't bother clipping them */
-              recordCallback,
-              &data );
+    err = Pa_OpenStream(&stream, &inputParameters, NULL, 11025, FRAMES_PER_BUFFER, paClipOff, recordCallback, &data);
     if( err != paNoError ) return false;
 
-    err = Pa_StartStream( stream );
+    err = Pa_StartStream(stream);
     if( err != paNoError ) return false;
 
     Codegen *pCodegen = new Codegen();
