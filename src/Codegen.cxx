@@ -108,6 +108,21 @@ Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
     SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
     pSubbandAnalysis->Compute();
 
+    matrix_f subbands = pSubbandAnalysis->getMatrix();
+    uint skip = pSubbandAnalysis->getNumFrames() / 8; // usually 673/8 = 84
+    for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
+        printf("band %d ", j);
+        for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+skip) {
+            if ((i/skip) < 8) {
+                float avg = 0; 
+                for(unsigned int k=0;k<skip;k++) avg = avg + subbands(j, i+k); 
+                avg = avg / (float)skip;
+                printf("%2.8f ", avg);
+            }
+        } 
+        printf("\n");
+    }
+
     Fingerprint *pFingerprint = new Fingerprint(pSubbandAnalysis, start_offset);
     pFingerprint->Compute();
 
