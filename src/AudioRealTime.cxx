@@ -184,7 +184,10 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     }
     _NumberSamples = data.frameIndex;
     err = Pa_CloseStream( stream );
-
+    FILE * outraw = fopen("out.raw", "wb");
+    fwrite(_pSamples, sizeof(float), _NumberSamples, outraw);
+    fclose(outraw);
+    free (temp_buffer);
     return true;
 
 }
