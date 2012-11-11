@@ -30,6 +30,7 @@
 #include <alsa/asoundlib.h>
 #include "portaudio.h"
 
+#define PA_ENABLE_DEBUG_OUTPUT false
 
 using std::string;
 
@@ -110,7 +111,6 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     PaStream*           stream;
     PaError             err = paNoError;
     paTestData          data;
-    int                 i;
     int                 totalFrames;
     int                 numSamples;
     int                 numBytes;
