@@ -230,7 +230,7 @@ uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis, uint j
 
                     // Set the code alongside the time of onset
                     _update_codes[actual_codes++] = FPCode(time_for_onset_ms_quantized, hashed_code);
-                    //fprintf(stderr, "whee %d,%d: [%d, %d] (%d, %d), %d = %u at %d\n", actual_codes, k, time_delta0, time_delta1, p[0][k], p[1][k], band, hashed_code, time_for_onset_ms_quantized);
+                    fprintf(stderr, "whee %d,%d: [%d, %d] (%d, %d), %d = %u at %u\n", actual_codes, k, time_delta0, time_delta1, p[0][k], p[1][k], band, hashed_code, time_for_onset_ms_quantized);
                 }
             }
         }
@@ -424,7 +424,7 @@ void Fingerprint::Compute() {
 
                     // Set the code alongside the time of onset
                     _Codes[actual_codes++] = FPCode(time_for_onset_ms_quantized, hashed_code);
-                    //fprintf(stderr, "whee %d,%d: [%d, %d] (%d, %d), %d = %u at %d\n", actual_codes, k, time_delta0, time_delta1, p[0][k], p[1][k], band, hashed_code, time_for_onset_ms_quantized);
+                    fprintf(stderr, "whee %d,%d: [%d, %d] (%d, %d), %d = %u at %u\n", actual_codes, k, time_delta0, time_delta1, p[0][k], p[1][k], band, hashed_code, time_for_onset_ms_quantized);
                 }
             }
         }

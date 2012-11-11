@@ -107,13 +107,13 @@ int main(int argc, char** argv) {
         int numSamples = pAudio->getNumSamples();
         t1 = now() - t1;
         double t2 = now();
-        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, -1);
+        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, 0);
         t2 = now() - t2;
         response->t1 = t1;
         response->t2 = t2;
         response->numSamples = numSamples;
         response->codegen = pCodegen;
-        response->start_offset = -1;
+        response->start_offset = 0;
         response->duration = duration;
         response->tag = 0;
         char *json = make_json_string(response);

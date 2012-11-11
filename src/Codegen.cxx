@@ -169,8 +169,8 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     _NumCodes = _pFingerprint->getUpdateCodes().size();
 
     printf("%d codes\n", _NumCodes);
-    printf("%s\n", _CodeString.c_str());
-    
+    //printf("%s\n", _CodeString.c_str());
+
     #ifdef VISUALIZE
     // Draw the thing
     char * frame = (char*) malloc(sizeof(char)*64);
