@@ -125,6 +125,7 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
 
 
     data.maxFrameIndex = totalFrames = duration * SAMPLE_RATE; /* Record for a few seconds. */
+    _pSamples = new float[duration * SAMPLE_RATE];
     data.frameIndex = 0;
     numSamples = totalFrames * NUM_CHANNELS;
     numBytes = numSamples * sizeof(SAMPLE);
@@ -167,6 +168,7 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
 
     Codegen *pCodegen = new Codegen();
     uint offset = 0;
+    uint sampleCounter = 0;
     uint amount_to_compute = (int)(0.5f * 11025.0);    
     float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
     while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
@@ -176,6 +178,7 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
             offset = data.frameIndex - amount_to_compute;
             printf("Calling codegen offset %d frameIndex %d amount %d\n", offset, data.frameIndex, amount_to_compute);
             for(uint j=0;j<amount_to_compute;j++) {
+                _pSamples[sampleCounter++] = data.recordedSamples[offset+j];
                 temp_buffer[j] = data.recordedSamples[offset + j];
             }
             pCodegen->callback(temp_buffer, amount_to_compute, offset);
@@ -210,7 +213,6 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         fprintf(stderr, "unable to open pcm device: %s\n", snd_strerror(rc));
         exit(1);
     }
-    printf("1\n");
 
     snd_pcm_hw_params_alloca(&params);
     snd_pcm_hw_params_any(handle, params);
@@ -221,7 +223,6 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     snd_pcm_hw_params_set_rate_near(handle, params, &val, &dir);
     frames = 32;
     snd_pcm_hw_params_set_period_size_near(handle, params, &frames, &dir);
-    printf("2\n");
 
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(handle, params);
@@ -229,7 +230,6 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         fprintf(stderr,"unable to set hw parameters: %s\n", snd_strerror(rc));
         exit(1);
     }
-    printf("3\n");
 
     /* Use a buffer large enough to hold one period */
     snd_pcm_hw_params_get_period_size(params, &frames, &dir);
@@ -239,12 +239,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     loops = (1000000*_Seconds) / val;
 
     uint sampleCounter = 0;
-
-    float *temp_buffer = (float*)malloc(sizeof(float) * frames);
     Codegen *pCodegen = new Codegen();
-    printf("4 frames is %d\n", frames);
-    uint temp_buffer_counter = 0;
-    uint amount_to_compute = (int)(0.5f * 11025.0);
 
     while (loops > 0) {
         loops--;
@@ -261,13 +256,7 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
         short *shortbuf = (short*)buffer;
         for(i=0;i<frames*2;i=i+2) {
             _pSamples[sampleCounter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
-            temp_buffer[temp_buffer_counter++] = ((float)shortbuf[i] + (float)shortbuf[i+1]) / 65536.0f;
         }
-                    if(temp_buffer_counter == amount_to_compute) {
-                printf("codegen w/ %d frames & offset %d\n", amount_to_compute, sampleCounter);
-                pCodegen->callback(temp_buffer, amount_to_compute, sampleCounter);
-                temp_buffer_counter = 0;
-            }
 
     }
 
