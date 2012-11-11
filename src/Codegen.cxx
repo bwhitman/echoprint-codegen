@@ -133,18 +133,14 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     for(int i=0;i<64;i++) frame[i] = 6;
     matrix_f subbands = pSubbandAnalysis->getMatrix();
     printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
-    int colcounter = 0;
     uint skip = pSubbandAnalysis->getNumFrames() / 8; // usually 673/8 = 84
     for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
-        printf("band %d ", j);
         for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+skip) {
             float avg = 0; 
             for(unsigned int k=0;k<skip;k++) avg = avg + subbands(j, i+k); 
             avg = avg / (float)skip;
-            printf("%2.8f ", avg);
+            frame[(i/skip * 8) + j] = (((int)(avg * 100000) - 15) % 15) + 1;
         }
-        printf("\n");
-        if(colcounter < 8) frame[(colcounter++ * 8) + 2] = 1;
     }
     draw_frame(_backpack, frame);
     free(frame);
