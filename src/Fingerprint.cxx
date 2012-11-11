@@ -51,7 +51,7 @@ unsigned int MurmurHash2 ( const void * key, int len, unsigned int seed ) {
 Fingerprint::Fingerprint(SubbandAnalysis* pSubbandAnalysis, int offset)
     : _pSubbandAnalysis(pSubbandAnalysis), _Offset(offset) { }
 
-Fingerprint::Fingerprint(int ttarg) : _ttArg(ttarg) {} // real time
+Fingerprint::Fingerprint(int ttarg) : _ttArg(ttarg) { _Offset = 0; } // real time
 
 void Fingerprint::adaptiveOnsetsInit(int duration) {
     // First pass adaptiveOnsets stuff
