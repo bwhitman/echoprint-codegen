@@ -136,12 +136,14 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     uint skip = pSubbandAnalysis->getNumFrames() / 8; // usually 673/8 = 84
     for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
         for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+skip) {
-            float avg = 0; 
-            for(unsigned int k=0;k<skip;k++) avg = avg + subbands(j, i+k); 
-            avg = avg / (float)skip;
-            printf("writing frame loc %d i: %d skip %d j %d to %d \n", ((i/skip) * 8) + j, i, skip, j, abs((((int)(avg * 100000) - 15) % 15) + 1));
-            fflush(stdout);
-            frame[((i/skip) * 8) + j] = abs((((int)(avg * 100000) - 15) % 15) + 1);
+            if ((i/skip) < 8) {
+                float avg = 0; 
+                for(unsigned int k=0;k<skip;k++) avg = avg + subbands(j, i+k); 
+                avg = avg / (float)skip;
+                printf("writing frame loc %d i: %d skip %d j %d to %d \n", ((i/skip) * 8) + j, i, skip, j, abs((((int)(avg * 100000) - 15) % 15) + 1));
+                fflush(stdout);
+                frame[((i/skip) * 8) + j] = abs((((int)(avg * 100000) - 15) % 15) + 1);
+            }
         }
     }
     draw_frame(_backpack, frame);
