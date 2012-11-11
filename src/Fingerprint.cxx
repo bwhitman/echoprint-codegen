@@ -51,6 +51,138 @@ unsigned int MurmurHash2 ( const void * key, int len, unsigned int seed ) {
 Fingerprint::Fingerprint(SubbandAnalysis* pSubbandAnalysis, int offset)
     : _pSubbandAnalysis(pSubbandAnalysis), _Offset(offset) { }
 
+Fingerprint::Fingerprint(int ttarg) : _ttArg(ttarg) {} // real time
+
+void Fingerprint::adaptiveOnsetsInit(int duration) {
+    // First pass adaptiveOnsets stuff
+    int  j;
+    _update_i = 0;
+    _update_onset_counter = 0;
+    _update_onset_counter_for_band = new uint[SUBBANDS];
+
+    for (j = 0; j < SUBBANDS; ++j) {
+        _update_onset_counter_for_band[j] = 0;
+        _update_N[j] = 0.0;
+        _update_taus[j] = 1.0;
+        _update_contact[j] = 0;
+        _update_lcontact[j] = 0;
+        _update_tsince[j] = 0;
+        _update_Y0[j] = 0;
+    }
+    _first_run = true;
+    // 0.5s was 673 frames, so...
+    _update_out = matrix_u(SUBBANDS, (duration+1)*1400); // dunno, close enough?
+
+
+}
+
+
+uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis) {
+    int i, j, k;
+    int deadtime = 128;
+    double overfact = 1.1;  /* threshold rel. to actual peak */
+    const float *pE;
+
+    matrix_f E = pSubbandAnalysis->getMatrix();
+
+    float ham[8];
+    // Take successive stretches of 8 subband samples and sum their energy under a hann window, then hop by 4 samples (50% window overlap).
+    int nsm = 8;
+    for(int i = 0 ; i != nsm ; i++)
+        ham[i] = .5 - .5*cos( (2.*M_PI/(nsm-1))*i);
+
+    int hop = 4;
+    int nc =  floor((float)E.size2()/(float)hop)-(floor((float)nsm/(float)hop)-1);
+    matrix_f Eb = matrix_f(nc, 8);
+    for(uint r=0;r<Eb.size1();r++) for(uint c=0;c<Eb.size2();c++) Eb(r,c) = 0.0;
+
+    for(i=0;i<nc;i++) {
+        for(j=0;j<SUBBANDS;j++) {
+            for(k=0;k<nsm;k++)  Eb(i,j) = Eb(i,j) + ( E(j,(i*hop)+k) * ham[k]);
+            Eb(i,j) = sqrtf(Eb(i,j));
+        }
+    }
+
+    int new_frames = Eb.size1();
+    pE = &Eb.data()[0];
+
+    if(_first_run == true) {
+        for(int j=0;j<SUBBANDS;j++) {
+            _update_H[j] = pE[j];
+        }
+        _first_run = false;
+    }
+
+
+    double bn[] = {0.1883, 0.4230, 0.3392}; /* preemph filter */   // new
+    int nbn = 3;
+    double a1 = 0.98;
+
+    for (i = 0; i < new_frames; ++i) {
+        _update_i++;
+        for (j = 0; j < SUBBANDS; ++j) {
+            double xn = 0;
+            /* calculate the filter -  FIR part */
+            // TODO: check this out. maybe update_i is not right here.
+            // Maybe we just copy the new pE into a buffer first and then run this update
+            if (_update_i >= 2*nbn) {
+                for (int k = 0; k < nbn; ++k) {
+                    xn += bn[k]*(pE[j-SUBBANDS*k] - pE[j-SUBBANDS*(2*nbn-k)]);
+                }
+            }
+            /* IIR part */
+            xn = xn + a1*_update_Y0[j];
+            /* remember the last filtered level */
+            _update_Y0[j] = xn;
+
+            _update_contact[j] = (xn > _update_H[j])? 1 : 0;
+
+            if (_update_contact[j] == 1 && _update_lcontact[j] == 0) {
+                /* attach - record the threshold level unless we have one */
+                if(_update_N[j] == 0) {
+                    _update_N[j] = _update_H[j];
+                }
+            }
+            if (_update_contact[j] == 1) {
+                /* update with new threshold */
+                _update_H[j] = xn * overfact;
+            } else {
+                /* apply decays */
+                _update_H[j] = _update_H[j] * exp(-1.0/(double)_update_taus[j]);
+            }
+
+            if (_update_contact[j] == 0 && _update_lcontact[j] == 1) {
+                /* detach */
+                if (_update_onset_counter_for_band[j] > 0   && (int)_update_out(j, _update_onset_counter_for_band[j]-1) > _update_i - deadtime) {
+                    // overwrite last-written time
+                    --_update_onset_counter_for_band[j];
+                    --_update_onset_counter;
+                }
+                _update_out(j, _update_onset_counter_for_band[j]++) = _update_i;
+                ++_update_onset_counter;
+                _update_tsince[j] = 0;
+                printf("New onset #%d Band %d time is %d\n", _update_onset_counter, j, _update_i);
+            }
+            ++_update_tsince[j];
+            if (_update_tsince[j] > _ttArg) {
+                _update_taus[j] = _update_taus[j] - 1;
+                if (_update_taus[j] < 1) _update_taus[j] = 1;
+            } else {
+                _update_taus[j] = _update_taus[j] + 1;
+            }
+
+            if ( (_update_contact[j] == 0) &&  (_update_tsince[j] > deadtime)) {
+                /* forget the threshold where we recently hit */
+                _update_N[j] = 0;
+            }
+            _update_lcontact[j] = _update_contact[j];
+        }
+        pE += SUBBANDS;
+    }
+
+    return _update_onset_counter;
+}
+
 
 uint Fingerprint::adaptiveOnsets(int ttarg, matrix_u&out, uint*&onset_counter_for_band) {
     //  E is a sgram-like matrix of energies.

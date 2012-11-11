@@ -32,7 +32,7 @@ struct FPCode;
 
 class CODEGEN_API Codegen {
 public:
-    Codegen(); // real time
+    Codegen(int duration); // real time
     Codegen(const float* pcm, unsigned int numSamples, int start_offset);
     std::string callback(const float *pcm, unsigned int numSamples, unsigned int offset_samples);
 
@@ -46,6 +46,7 @@ private:
     std::string compress(const std::string& s);
     std::string _CodeString;
     int _NumCodes;
+    Fingerprint* _pFingerprint;
 };
 
 #endif

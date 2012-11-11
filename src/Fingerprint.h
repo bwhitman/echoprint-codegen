@@ -33,13 +33,27 @@ public:
     uint quantized_time_for_frame_delta(uint frame_delta);
     uint quantized_time_for_frame_absolute(uint frame);
     Fingerprint(SubbandAnalysis* pSubbandAnalysis, int offset);
+    Fingerprint(int ttarg); // real time
+
+    void adaptiveOnsetsInit(int duration);
+    uint adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis);
     void Compute();
     uint adaptiveOnsets(int ttarg, matrix_u&out, uint*&onset_counter_for_band) ;
     std::vector<FPCode>& getCodes(){return _Codes;}
 protected:
+    uint * _update_onset_counter_for_band;
+    uint _update_onset_counter;
+    matrix_f _update_out;
     SubbandAnalysis *_pSubbandAnalysis;
     int _Offset;
+    int _ttArg;
     std::vector<FPCode> _Codes;
+    double _update_H[SUBBANDS],_update_taus[SUBBANDS], _update_N[SUBBANDS];
+    int _update_contact[SUBBANDS], _update_lcontact[SUBBANDS], _update_tsince[SUBBANDS];
+    double _update_Y0[SUBBANDS];
+    bool _first_run;
+    int _update_i; // onset counter
+
 };
 
 #endif

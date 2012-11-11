@@ -86,8 +86,10 @@ static int serialport_init(const char* serialport, speed_t brate) {
 }
 #endif
 
-Codegen::Codegen() {
+Codegen::Codegen(int duration) {
     // real time, don't do much
+    _pFingerprint = new Fingerprint(345);
+    _pFingerprint->adaptiveOnsetsInit(duration);
     _backpack = serialport_init("/dev/ttyO1", 9600);
 }
 
@@ -119,13 +121,15 @@ Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
 
 
 string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int offset_samples) {
-    printf("Got %d samples at %d\n", numSamples, offset_samples);
+    //printf("Got %d samples at %d\n", numSamples, offset_samples);
     Whitening *pWhitening = new Whitening(pcm, numSamples);
     pWhitening->Compute();
     AudioBufferInput *pAudio = new AudioBufferInput();
     pAudio->SetBuffer(pWhitening->getWhitenedSamples(), pWhitening->getNumSamples());
     SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
     pSubbandAnalysis->Compute();
+
+    _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis);
 
     #ifdef VISUALIZE
     // Draw the thing

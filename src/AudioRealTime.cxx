@@ -119,7 +119,7 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     err = Pa_StartStream(stream);
     if( err != paNoError ) return false;
 
-    Codegen *pCodegen = new Codegen();
+    Codegen *pCodegen = new Codegen(duration);
     uint offset = 0;
     uint amount_to_compute = (int)(0.5f * 11025.0);    
     float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
@@ -128,12 +128,12 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
         Pa_Sleep(50);
         if((uint)data.frameIndex > amount_to_compute) {
             offset = data.frameIndex - amount_to_compute;
-            printf("Calling codegen offset %d frameIndex %d amount %d\n", offset, data.frameIndex, amount_to_compute);
+            //printf("Calling codegen offset %d frameIndex %d amount %d\n", offset, data.frameIndex, amount_to_compute);
             for(uint j=0;j<amount_to_compute;j++) {
                 temp_buffer[j] = data.recordedSamples[offset + j];
             }
             pCodegen->callback(temp_buffer, amount_to_compute, offset);
-            printf("Done calling codegen\n");
+            //printf("Done calling codegen\n");
         }
     }
     _NumberSamples = data.frameIndex;
