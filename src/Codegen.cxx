@@ -39,7 +39,7 @@ static void draw_frame(int fd, char*frame) {
     // Now write the colors
     for(i=0;i<64;i=i+2) {
         buf = (frame[i] << 4) | frame[i+1];
-        j=write(fd, &buf, 1);
+        j = write(fd, &buf, 1);
         usleep(SLEEP_US);
     }
 }
@@ -134,16 +134,17 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     matrix_f subbands = pSubbandAnalysis->getMatrix();
     printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
     int colcounter = 0;
-    for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+80) {
-        float max = -32767;
-        int maxi = -1;
-        for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
-            if (subbands(j,i) > max) {
-                maxi = j;
-                max = subbands(j,i);
-            }
+    uint skip = pSubbandAnalysis->getNumFrames() / 8; // usually 673/8 = 84
+    for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
+        printf("band %d ", j);
+        for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+skip) {
+            float avg = 0; 
+            for(unsigned int k=0;k<skip;k++) avg = avg + subbands(j, i+k); 
+            avg = avg / (float)skip;
+            printf("%2.8f ", avg);
         }
-        if(colcounter < 8) frame[(colcounter++ * 8) + maxi] = 1;
+        printf("\n");
+        if(colcounter < 8) frame[(colcounter++ * 8) + 2] = 1;
     }
     draw_frame(_backpack, frame);
     free(frame);

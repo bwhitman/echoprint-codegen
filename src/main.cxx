@@ -246,7 +246,7 @@ int main(int argc, char** argv) {
 
         if(count == 0) throw std::runtime_error("No files given.\n");
 
-        #ifdef WINDOWS
+        #ifdef _WIN32
         // Threading doesn't work in windows yet.
         for(int i=0;i<count;i++) {
             codegen_response_t* response = codegen_file((char*)files[i].c_str(), start_offset, duration, i);
