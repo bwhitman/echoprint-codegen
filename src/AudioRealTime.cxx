@@ -121,11 +121,11 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
 
     Codegen *pCodegen = new Codegen(duration);
     uint offset = 0;
-    uint amount_to_compute = (int)(4.0f * 11025.0);    
+    uint amount_to_compute = (int)(2.0f * 11025.0);    
     float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
     while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
     {
-        Pa_Sleep(500);
+        Pa_Sleep(50);
         if((uint)data.frameIndex > amount_to_compute) {
             offset = data.frameIndex - amount_to_compute;
             for(uint j=0;j<amount_to_compute;j++) {
