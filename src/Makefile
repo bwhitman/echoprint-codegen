@@ -17,7 +17,7 @@ CFLAGS=-Wall -fPIC $(OPTFLAGS)
 LIBNAME=libcodegen.so
 SONAME=$(LIBNAME).$(VERSION_MAJ)
 
-LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS) -lportaudio
+LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS)
 MODULES_LIB = \
     AudioBufferInput.o \
     AudioStreamInput.o \
@@ -42,7 +42,7 @@ else
 endif
 
 realtime-codegen: $(MODULES) AudioRealTime.o realtime.o
-	$(CXX) $(MODULES) AudioRealTime.o $(LDFLAGS) realtime.o -o ../realtime-codegen
+	$(CXX) $(MODULES) AudioRealTime.o $(LDFLAGS) -lportaudio realtime.o -o ../realtime-codegen
 
 echoprint-codegen: $(MODULES) main.o
 	$(CXX) $(MODULES) $(LDFLAGS) main.o -o ../echoprint-codegen
