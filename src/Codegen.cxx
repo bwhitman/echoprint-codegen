@@ -139,7 +139,7 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
             float avg = 0; 
             for(unsigned int k=0;k<skip;k++) avg = avg + subbands(j, i+k); 
             avg = avg / (float)skip;
-            frame[(i/skip * 8) + j] = (((int)(avg * 100000) - 15) % 15) + 1;
+            frame[((i/skip) * 8) + j] = (((int)(avg * 100000) - 15) % 15) + 1;
         }
     }
     draw_frame(_backpack, frame);
