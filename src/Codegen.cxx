@@ -119,7 +119,7 @@ Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
 
 
 string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int offset_samples) {
-    printf("callback with %d samples at %d\n", numSamples, offset_samples);
+    printf("Got %d samples at %d\n", numSamples, offset_samples);
     Whitening *pWhitening = new Whitening(pcm, numSamples);
     pWhitening->Compute();
     AudioBufferInput *pAudio = new AudioBufferInput();
@@ -132,7 +132,6 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     char * frame = (char*) malloc(sizeof(char)*64);
     for(int i=0;i<64;i++) frame[i] = 6;
     matrix_f subbands = pSubbandAnalysis->getMatrix();
-    printf("Got %d frames\n", pSubbandAnalysis->getNumFrames());
     uint skip = pSubbandAnalysis->getNumFrames() / 8; // usually 673/8 = 84
     for(unsigned int j=0;j<pSubbandAnalysis->getNumBands();j++) {
         for(unsigned int i=0; i<pSubbandAnalysis->getNumFrames();i=i+skip) {
@@ -140,8 +139,6 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
                 float avg = 0; 
                 for(unsigned int k=0;k<skip;k++) avg = avg + subbands(j, i+k); 
                 avg = avg / (float)skip;
-                printf("writing frame loc %d i: %d skip %d j %d to %d \n", ((i/skip) * 8) + j, i, skip, j, abs((((int)(avg * 100000) - 15) % 15) + 1));
-                fflush(stdout);
                 frame[((i/skip) * 8) + j] = abs((((int)(avg * 100000) - 15) % 15) + 1);
             }
         }
