@@ -36,7 +36,7 @@ public:
     Fingerprint(int ttarg); // real time
 
     void adaptiveOnsetsInit(int duration);
-    uint adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis);
+    uint adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis, uint just_the_new_frames);
     void Compute();
     uint adaptiveOnsets(int ttarg, matrix_u&out, uint*&onset_counter_for_band) ;
     std::vector<FPCode>& getCodes(){return _Codes;}

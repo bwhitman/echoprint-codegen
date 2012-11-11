@@ -77,7 +77,7 @@ void Fingerprint::adaptiveOnsetsInit(int duration) {
 }
 
 
-uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis) {
+uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis, uint just_the_new_frames) {
     int i, j, k;
     int deadtime = 128;
     double overfact = 1.1;  /* threshold rel. to actual peak */
@@ -92,13 +92,14 @@ uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis) {
         ham[i] = .5 - .5*cos( (2.*M_PI/(nsm-1))*i);
 
     int hop = 4;
-    int nc =  floor((float)E.size2()/(float)hop)-(floor((float)nsm/(float)hop)-1);
+    int nc =  floor((float)just_the_new_frames/(float)hop)-(floor((float)nsm/(float)hop)-1);
     matrix_f Eb = matrix_f(nc, 8);
     for(uint r=0;r<Eb.size1();r++) for(uint c=0;c<Eb.size2();c++) Eb(r,c) = 0.0;
 
+    uint offset = E.size2()-just_the_new_frames;
     for(i=0;i<nc;i++) {
         for(j=0;j<SUBBANDS;j++) {
-            for(k=0;k<nsm;k++)  Eb(i,j) = Eb(i,j) + ( E(j,(i*hop)+k) * ham[k]);
+            for(k=0;k<nsm;k++)  Eb(i,j) = Eb(i,j) + ( E(j,(i*hop)+k+offset) * ham[k]);
             Eb(i,j) = sqrtf(Eb(i,j));
         }
     }
@@ -184,7 +185,7 @@ uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis) {
     for(uint i=0;i<_update_onset_counter*6;i++) _update_codes[i] = FPCode(0,0);
     unsigned char hash_material[5]; for(uint i=0;i<5;i++) hash_material[i] = 0;
     int actual_codes = 0;
-    
+
     for(unsigned char band=0;band<SUBBANDS;band++) {
         if (_update_onset_counter_for_band[band]>2) {
             for(uint onset=0;onset<_update_onset_counter_for_band[band]-2;onset++) {

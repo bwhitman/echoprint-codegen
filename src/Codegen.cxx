@@ -157,9 +157,14 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     pAudio->SetBuffer(pWhitening->getWhitenedSamples(), pWhitening->getNumSamples());
     SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
     pSubbandAnalysis->Compute();
+    float samples_per_frame = (float)numSamples /(float)pSubbandAnalysis->getNumFrames();
     printf("this offset %d average %2.2f offset %d got %d subband frames for %d samples, %2.2f samples/frame\n", 
-        this_offset, average_offset, offset_samples, pSubbandAnalysis->getNumFrames(), numSamples, (float)numSamples /(float)pSubbandAnalysis->getNumFrames());
-    _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis);
+        this_offset, average_offset, offset_samples, pSubbandAnalysis->getNumFrames(), numSamples, samples_per_frame);
+    
+    // Only give adaptiveOnsets the frames that are new.
+    int new_frames = (int)((float)this_offset / samples_per_frame);
+    printf("Starting at %d frames from the end of subbandanalysis\n", new_frames);
+    _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis, new_frames);
     _CodeString = createCodeString(_pFingerprint->getUpdateCodes());
     _NumCodes = _pFingerprint->getUpdateCodes().size();
 
