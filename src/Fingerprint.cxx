@@ -161,7 +161,6 @@ uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis) {
                 _update_out(j, _update_onset_counter_for_band[j]++) = _update_i;
                 ++_update_onset_counter;
                 _update_tsince[j] = 0;
-                printf("New onset #%d Band %d time is %d\n", _update_onset_counter, j, _update_i);
             }
             ++_update_tsince[j];
             if (_update_tsince[j] > _ttArg) {
@@ -179,6 +178,63 @@ uint Fingerprint::adaptiveOnsetsUpdate(SubbandAnalysis *pSubbandAnalysis) {
         }
         pE += SUBBANDS;
     }
+
+    // I think i should print out codes here
+    _update_codes.resize(_update_onset_counter*6);
+    unsigned char hash_material[5];
+    int actual_codes = 0;
+    for(uint i=0;i<5;i++) hash_material[i] = 0;
+    for(unsigned char band=0;band<SUBBANDS;band++) {
+        if (_update_onset_counter_for_band[band]>2) {
+            for(uint onset=0;onset<_update_onset_counter_for_band[band]-2;onset++) {
+                uint time_for_onset_ms_quantized = quantized_time_for_frame_absolute(_update_out(band,onset));
+
+                uint p[2][6];
+                for (int i = 0; i < 6; i++) {
+                    p[0][i] = 0;
+                    p[1][i] = 0;
+                }
+                int nhashes = 6;
+
+                if ((int)onset == (int)_update_onset_counter_for_band[band]-4)  { nhashes = 3; }
+                if ((int)onset == (int)_update_onset_counter_for_band[band]-3)  { nhashes = 1; }
+                p[0][0] = (_update_out(band,onset+1) - _update_out(band,onset));
+                p[1][0] = (_update_out(band,onset+2) - _update_out(band,onset+1));
+                if(nhashes > 1) {
+                    p[0][1] = (_update_out(band,onset+1) - _update_out(band,onset));
+                    p[1][1] = (_update_out(band,onset+3) - _update_out(band,onset+1));
+                    p[0][2] = (_update_out(band,onset+2) - _update_out(band,onset));
+                    p[1][2] = (_update_out(band,onset+3) - _update_out(band,onset+2));
+                    if(nhashes > 3) {
+                        p[0][3] = (_update_out(band,onset+1) - _update_out(band,onset));
+                        p[1][3] = (_update_out(band,onset+4) - _update_out(band,onset+1));
+                        p[0][4] = (_update_out(band,onset+2) - _update_out(band,onset));
+                        p[1][4] = (_update_out(band,onset+4) - _update_out(band,onset+2));
+                        p[0][5] = (_update_out(band,onset+3) - _update_out(band,onset));
+                        p[1][5] = (_update_out(band,onset+4) - _update_out(band,onset+3));
+                    }
+                }
+
+                // For each pair emit a code
+                for(uint k=0;k<6;k++) {
+                    // Quantize the time deltas to 23ms
+                    short time_delta0 = (short)quantized_time_for_frame_delta(p[0][k]);
+                    short time_delta1 = (short)quantized_time_for_frame_delta(p[1][k]);
+                    // Create a key from the time deltas and the band index
+                    memcpy(hash_material+0, (const void*)&time_delta0, 2);
+                    memcpy(hash_material+2, (const void*)&time_delta1, 2);
+                    memcpy(hash_material+4, (const void*)&band, 1);
+                    uint hashed_code = MurmurHash2(&hash_material, 5, HASH_SEED) & HASH_BITMASK;
+
+                    // Set the code alongside the time of onset
+                    _update_codes[actual_codes++] = FPCode(time_for_onset_ms_quantized, hashed_code);
+                    //fprintf(stderr, "whee %d,%d: [%d, %d] (%d, %d), %d = %u at %d\n", actual_codes, k, time_delta0, time_delta1, p[0][k], p[1][k], band, hashed_code, time_for_onset_ms_quantized);
+                }
+            }
+        }
+    }
+
+
 
     return _update_onset_counter;
 }

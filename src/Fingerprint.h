@@ -40,6 +40,7 @@ public:
     void Compute();
     uint adaptiveOnsets(int ttarg, matrix_u&out, uint*&onset_counter_for_band) ;
     std::vector<FPCode>& getCodes(){return _Codes;}
+    std::vector<FPCode>& getUpdateCodes(){return _update_codes;}
 protected:
     uint * _update_onset_counter_for_band;
     uint _update_onset_counter;
@@ -47,7 +48,7 @@ protected:
     SubbandAnalysis *_pSubbandAnalysis;
     int _Offset;
     int _ttArg;
-    std::vector<FPCode> _Codes;
+    std::vector<FPCode> _Codes, _update_codes;
     double _update_H[SUBBANDS],_update_taus[SUBBANDS], _update_N[SUBBANDS];
     int _update_contact[SUBBANDS], _update_lcontact[SUBBANDS], _update_tsince[SUBBANDS];
     double _update_Y0[SUBBANDS];

@@ -35,12 +35,14 @@ static void draw_frame(int fd, char*frame) {
     char buf = 32;
     // Write the start frame
     j = write(fd, &buf, 1);
-    usleep(SLEEP_US);
-    // Now write the colors
-    for(i=0;i<64;i=i+2) {
-        buf = (frame[i] << 4) | frame[i+1];
-        j = write(fd, &buf, 1);
+    if(j>=0) {
         usleep(SLEEP_US);
+        // Now write the colors
+        for(i=0;i<64;i=i+2) {
+            buf = (frame[i] << 4) | frame[i+1];
+            j = write(fd, &buf, 1);
+            usleep(SLEEP_US);
+        }
     }
 }
 static int serialport_init(const char* serialport, speed_t brate) {
@@ -130,6 +132,10 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     pSubbandAnalysis->Compute();
 
     _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis);
+    _CodeString = createCodeString(_pFingerprint->getUpdateCodes());
+    _NumCodes = _pFingerprint->getUpdateCodes().size();
+
+    printf("%s\n", _CodeString.c_str());
 
     #ifdef VISUALIZE
     // Draw the thing
@@ -150,7 +156,6 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     draw_frame(_backpack, frame);
     free(frame);
     #endif
-
 
     delete pSubbandAnalysis;
     delete pAudio;
