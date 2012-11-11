@@ -90,6 +90,9 @@ static int serialport_init(const char* serialport, speed_t brate) {
 
 Codegen::Codegen(int duration) {
     // real time, don't do much
+    _compute_counter = 0;
+    _offset_sum = 0;
+    _last_offset = 0;
     _pFingerprint = new Fingerprint(345);
     _pFingerprint->adaptiveOnsetsInit(duration);
     _backpack = serialport_init("/dev/ttyO1", 9600);
@@ -139,18 +142,28 @@ Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
 
 string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int offset_samples) {
     //printf("Got %d samples at %d\n", numSamples, offset_samples);
+    float average_offset = 0;
+    uint this_offset = offset_samples - _last_offset;
+    if(_compute_counter) {
+        _offset_sum = _offset_sum + this_offset;
+        average_offset = (float)_offset_sum / (float)_compute_counter;
+    }
+    _last_offset = offset_samples;
+    _compute_counter++;
+
     Whitening *pWhitening = new Whitening(pcm, numSamples);
     pWhitening->Compute();
     AudioBufferInput *pAudio = new AudioBufferInput();
     pAudio->SetBuffer(pWhitening->getWhitenedSamples(), pWhitening->getNumSamples());
     SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
     pSubbandAnalysis->Compute();
-
+    printf("this offset %d average %2.2f offset %d got %d subband frames for %d samples, %2.2f samples/frame\n", 
+        this_offset, average_offset, offset_samples, pSubbandAnalysis->getNumFrames(), numSamples, (float)numSamples /(float)pSubbandAnalysis->getNumFrames());
     _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis);
     _CodeString = createCodeString(_pFingerprint->getUpdateCodes());
     _NumCodes = _pFingerprint->getUpdateCodes().size();
 
-    printf("%s\n", _CodeString.c_str());
+    printf("%d codes\n", _NumCodes);
 
     #ifdef VISUALIZE
     // Draw the thing

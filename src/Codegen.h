@@ -47,6 +47,7 @@ private:
     std::string _CodeString;
     int _NumCodes;
     Fingerprint* _pFingerprint;
+    int _last_offset, _compute_counter, _offset_sum;
 };
 
 #endif
