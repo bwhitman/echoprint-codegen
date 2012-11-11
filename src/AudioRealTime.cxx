@@ -50,7 +50,7 @@ typedef struct
 {
     int          frameIndex;  /* Index into sample array. */
     int          maxFrameIndex;
-    SAMPLE      *recordedSamples;
+    float        *recordedSamples;
 }
 paTestData;
 
@@ -62,8 +62,8 @@ static int recordCallback( const void *inputBuffer, void *outputBuffer,
                            void *userData )
 {
     paTestData *data = (paTestData*)userData;
-    const SAMPLE *rptr = (const SAMPLE*)inputBuffer;
-    SAMPLE *wptr = &data->recordedSamples[data->frameIndex * NUM_CHANNELS];
+    const float *rptr = (const SAMPLE*)inputBuffer;
+    float *wptr = &data->recordedSamples[data->frameIndex * NUM_CHANNELS];
     long framesToCalc;
     long i;
     int finished;
@@ -74,29 +74,21 @@ static int recordCallback( const void *inputBuffer, void *outputBuffer,
     (void) statusFlags;
     (void) userData;
 
-    if( framesLeft < framesPerBuffer )
-    {
+    if( framesLeft < framesPerBuffer ) {
         framesToCalc = framesLeft;
         finished = paComplete;
-    }
-    else
-    {
+    } else  {
         framesToCalc = framesPerBuffer;
         finished = paContinue;
     }
 
-    if( inputBuffer == NULL )
-    {
-        for( i=0; i<framesToCalc; i++ )
-        {
+    if( inputBuffer == NULL ) {
+        for( i=0; i<framesToCalc; i++ ) {
             *wptr++ = SAMPLE_SILENCE;  /* left */
             if( NUM_CHANNELS == 2 ) *wptr++ = SAMPLE_SILENCE;  /* right */
         }
-    }
-    else
-    {
-        for( i=0; i<framesToCalc; i++ )
-        {
+    } else {
+        for( i=0; i<framesToCalc; i++ ) {
             *wptr++ = *rptr++;  /* left */
             if( NUM_CHANNELS == 2 ) *wptr++ = *rptr++;  /* right */
         }
@@ -123,19 +115,12 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     int                 numSamples;
     int                 numBytes;
 
-
-    data.maxFrameIndex = totalFrames = duration * SAMPLE_RATE; /* Record for a few seconds. */
-    _pSamples = new float[duration * SAMPLE_RATE];
+    data.maxFrameIndex = totalFrames = duration * SAMPLE_RATE; 
     data.frameIndex = 0;
     numSamples = totalFrames * NUM_CHANNELS;
-    numBytes = numSamples * sizeof(SAMPLE);
-    data.recordedSamples = (SAMPLE *) malloc( numBytes ); /* From now on, recordedSamples is initialised. */
-    if( data.recordedSamples == NULL )
-    {
-        printf("Could not allocate record array.\n");
-        return false;
-    }
-    for( i=0; i<numSamples; i++ ) data.recordedSamples[i] = 0;
+    numBytes = numSamples * sizeof(float);
+    _pSamples = (float *) malloc( numBytes ); /* From now on, recordedSamples is initialised. */
+    data.recordedSamples = _pSamples;
 
     err = Pa_Initialize();
     if( err != paNoError ) return false;
@@ -145,12 +130,12 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
         fprintf(stderr,"Error: No default input device.\n");
         return false;
     }
+
     inputParameters.channelCount = 1;                    /* stereo input */
     inputParameters.sampleFormat = PA_SAMPLE_TYPE;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
 
-    /* Record some audio. -------------------------------------------- */
     err = Pa_OpenStream(
               &stream,
               &inputParameters,
@@ -165,10 +150,8 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     err = Pa_StartStream( stream );
     if( err != paNoError ) return false;
 
-
     Codegen *pCodegen = new Codegen();
     uint offset = 0;
-    uint sampleCounter = 0;
     uint amount_to_compute = (int)(0.5f * 11025.0);    
     float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
     while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
@@ -178,7 +161,6 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
             offset = data.frameIndex - amount_to_compute;
             printf("Calling codegen offset %d frameIndex %d amount %d\n", offset, data.frameIndex, amount_to_compute);
             for(uint j=0;j<amount_to_compute;j++) {
-                _pSamples[sampleCounter++] = data.recordedSamples[offset+j];
                 temp_buffer[j] = data.recordedSamples[offset + j];
             }
             pCodegen->callback(temp_buffer, amount_to_compute, offset);
@@ -239,7 +221,6 @@ bool AudioRealTime::ProcessRealTime_ALSA(int duration) {
     loops = (1000000*_Seconds) / val;
 
     uint sampleCounter = 0;
-    Codegen *pCodegen = new Codegen();
 
     while (loops > 0) {
         loops--;
