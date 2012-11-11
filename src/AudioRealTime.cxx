@@ -120,18 +120,17 @@ bool AudioRealTime::ProcessRealTime_PortAudio(int duration) {
     if( err != paNoError ) return false;
 
     Codegen *pCodegen = new Codegen(duration);
-    uint offset = 0;
     uint amount_to_compute = (int)(2.0f * 11025.0);    
     float * temp_buffer = (float*)malloc(sizeof(float) * amount_to_compute);
     while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
     {
         Pa_Sleep(50);
-        if((uint)data.frameIndex > amount_to_compute) {
-            offset = data.frameIndex - amount_to_compute;
+        if((uint)data.frameIndex >= amount_to_compute) {
             for(uint j=0;j<amount_to_compute;j++) {
-                temp_buffer[j] = data.recordedSamples[offset + j];
+                temp_buffer[j] = data.recordedSamples[j];
             }
-            pCodegen->callback(temp_buffer, amount_to_compute, offset);
+            data.frameIndex = 0;
+            pCodegen->callback(temp_buffer, amount_to_compute);
         }
     }
     _NumberSamples = data.frameIndex;

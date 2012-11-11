@@ -140,34 +140,18 @@ Codegen::Codegen(const float* pcm, unsigned int numSamples, int start_offset) {
 
 
 
-string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int offset_samples) {
+string Codegen::callback(const float *pcm, unsigned int numSamples) {
     //printf("Got %d samples at %d\n", numSamples, offset_samples);
-    float average_offset = 0;
-    uint this_offset = offset_samples - _last_offset;
-    if(_compute_counter) {
-        _offset_sum = _offset_sum + this_offset;
-        average_offset = (float)_offset_sum / (float)_compute_counter;
-    }
-    _last_offset = offset_samples;
-    _compute_counter++;
 
     Whitening *pWhitening = new Whitening(pcm, numSamples);
     pWhitening->Compute();
     AudioBufferInput *pAudio = new AudioBufferInput();
     pAudio->SetBuffer(pWhitening->getWhitenedSamples(), pWhitening->getNumSamples());
     SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
-    pSubbandAnalysis->Compute();
-    float samples_per_frame = (float)numSamples /(float)pSubbandAnalysis->getNumFrames();
-    printf("this offset %d average %2.2f offset %d got %d subband frames for %d samples, %2.2f samples/frame\n", 
-        this_offset, average_offset, offset_samples, pSubbandAnalysis->getNumFrames(), numSamples, samples_per_frame);
-    
-    // Only give adaptiveOnsets the frames that are new.
-    int new_frames = (int)((float)this_offset*0.8f / samples_per_frame);
-    printf("Starting at %d frames from the end of subbandanalysis\n", new_frames);
-    _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis, new_frames);
+    pSubbandAnalysis->Compute();    
+    _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis);
     _CodeString = createCodeString(_pFingerprint->getUpdateCodes());
     _NumCodes = _pFingerprint->getUpdateCodes().size();
-
     printf("%d codes\n", _NumCodes);
     printf("%s\n", _CodeString.c_str());
 
