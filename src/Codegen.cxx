@@ -127,7 +127,6 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     SubbandAnalysis *pSubbandAnalysis = new SubbandAnalysis(pAudio);
     pSubbandAnalysis->Compute();
 
-
     #ifdef VISUALIZE
     // Draw the thing
     char * frame = (char*) malloc(sizeof(char)*64);
@@ -149,9 +148,11 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
     draw_frame(_backpack, frame);
     free(frame);
     #endif
+
+
     delete pSubbandAnalysis;
-    delete pWhitening;
     delete pAudio;
+    delete pWhitening;
     return "";
 
 }

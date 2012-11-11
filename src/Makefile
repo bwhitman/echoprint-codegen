@@ -17,36 +17,20 @@ CFLAGS=-Wall -fPIC $(OPTFLAGS)
 LIBNAME=libcodegen.so
 SONAME=$(LIBNAME).$(VERSION_MAJ)
 
-ifeq ($(UNAME),Linux)
-	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread -lasound $(OPTFLAGS) -lportaudio
-	MODULES_LIB = \
-	    AudioBufferInput.o \
-	    AudioStreamInput.o \
-	    AudioRealTime.o \
-	    Base64.o \
-	    Codegen.o \
-	    Fingerprint.o \
-	    MatrixUtility.o \
-	    SubbandAnalysis.o \
-	    Whitening.o
-else
-	LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS) -framework AudioToolbox -framework CoreFoundation
-	MODULES_LIB = \
-	    AudioBufferInput.o \
-	    AudioStreamInput.o \
-	    AudioRealTimeCoreAudio.o \
-	    CAStreamBasicDescription.o \
-	    Base64.o \
-	    Codegen.o \
-	    Fingerprint.o \
-	    MatrixUtility.o \
-	    SubbandAnalysis.o \
-	    Whitening.o
-endif
+LDFLAGS=$(TAGLIB_LIBS) -lz -lpthread $(OPTFLAGS) -lportaudio
+MODULES_LIB = \
+    AudioBufferInput.o \
+    AudioStreamInput.o \
+    Base64.o \
+    Codegen.o \
+    Fingerprint.o \
+    MatrixUtility.o \
+    SubbandAnalysis.o \
+    Whitening.o
 
 MODULES = $(MODULES_LIB) Metadata.o
 
-all: libcodegen echoprint-codegen
+all: libcodegen echoprint-codegen realtime-codegen
 
 libcodegen: $(MODULES_LIB)
 ifeq ($(UNAME),Darwin)
@@ -56,6 +40,9 @@ ifeq ($(UNAME),Darwin)
 else
 	$(CXX) -shared -fPIC -Wl,-soname,$(SONAME) -o $(LIBNAME).$(VERSION) $(MODULES_LIB) -lz
 endif
+
+realtime-codegen: $(MODULES) AudioRealTime.o realtime.o
+	$(CXX) $(MODULES) AudioRealTime.o $(LDFLAGS) realtime.o -o ../realtime-codegen
 
 echoprint-codegen: $(MODULES) main.o
 	$(CXX) $(MODULES) $(LDFLAGS) main.o -o ../echoprint-codegen

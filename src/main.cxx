@@ -15,11 +15,7 @@
 #include <stdexcept>
 
 #include "AudioStreamInput.h"
-#ifdef __linux__
-    #include "AudioRealTime.h"
-#else
-    #include "AudioRealTimeCoreAudio.h"
-#endif
+#include "AudioRealTime.h"
 #include "Metadata.h"
 #include "Codegen.h"
 #include <string>
@@ -120,78 +116,41 @@ codegen_response_t *codegen_file(char* filename, int start_offset, int duration,
     codegen_response_t *response = (codegen_response_t *)malloc(sizeof(codegen_response_t));
     response->error = NULL;
     response->codegen = NULL;
-    
-    if(strcmp(filename, "CODEGEN_LINEIN") == 0) {
-        // UGH I HATE 
-        #ifdef __APPLE__
-            printf("Apple\n");
-            auto_ptr<AudioRealTimeCoreAudio> pAudio(new AudioRealTimeCoreAudio());
-            pAudio->ProcessRealTime(duration);
-        #else
-            printf("linux\n");
-            auto_ptr<AudioRealTime> pAudio(new AudioRealTime());
-            pAudio->ProcessRealTime_PortAudio(duration);
-        #endif
-
-        printf("get numSamples\n");
-        int numSamples = pAudio->getNumSamples();
-        printf("get numSamples done %d\n", numSamples);
-        t1 = now() - t1;
-        double t2 = now();
-        printf("get codegen\n");
-
-        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
-        printf("get codegen done\n");
-
-        t2 = now() - t2;
-        response->t1 = t1;
-        response->t2 = t2;
-        response->numSamples = numSamples;
-        response->codegen = pCodegen;
-        response->codegen = NULL;
-        response->start_offset = start_offset;
-        response->duration = duration;
-        response->tag = tag;
-        response->filename = filename;
-        return response;
-    } else {
-        auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
-        pAudio->ProcessFile(filename, start_offset, duration);
-        if (pAudio.get() == NULL) { // Unable to decode!
-            char* output = (char*) malloc(16384);
-            sprintf(output,"{\"error\":\"could not create decoder\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
-                tag,
-                escape(filename).c_str());
-            response->error = output;
-            return response;
-        }
-
-        int numSamples = pAudio->getNumSamples();
-        if (numSamples < 1) {
-            char* output = (char*) malloc(16384);
-            sprintf(output,"{\"error\":\"could not decode\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
-                tag,
-                escape(filename).c_str());
-            response->error = output;
-            return response;
-        }
-        t1 = now() - t1;
-        double t2 = now();
-        Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
-        t2 = now() - t2;
-    
-        response->t1 = t1;
-        response->t2 = t2;
-        response->numSamples = numSamples;
-        response->codegen = pCodegen;
-        response->start_offset = start_offset;
-        response->duration = duration;
-        response->tag = tag;
-        response->filename = filename;
-        
+    auto_ptr<FfmpegStreamInput> pAudio(new FfmpegStreamInput());
+    pAudio->ProcessFile(filename, start_offset, duration);
+    if (pAudio.get() == NULL) { // Unable to decode!
+        char* output = (char*) malloc(16384);
+        sprintf(output,"{\"error\":\"could not create decoder\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
+            tag,
+            escape(filename).c_str());
+        response->error = output;
         return response;
     }
-    return NULL;
+
+    int numSamples = pAudio->getNumSamples();
+    if (numSamples < 1) {
+        char* output = (char*) malloc(16384);
+        sprintf(output,"{\"error\":\"could not decode\", \"tag\":%d, \"metadata\":{\"filename\":\"%s\"}}",
+            tag,
+            escape(filename).c_str());
+        response->error = output;
+        return response;
+    }
+    t1 = now() - t1;
+    double t2 = now();
+    Codegen *pCodegen = new Codegen(pAudio->getSamples(), numSamples, start_offset);
+    t2 = now() - t2;
+
+    response->t1 = t1;
+    response->t2 = t2;
+    response->numSamples = numSamples;
+    response->codegen = pCodegen;
+    response->start_offset = start_offset;
+    response->duration = duration;
+    response->tag = tag;
+    response->filename = filename;
+    
+    return response;
 }
 
 
@@ -283,14 +242,11 @@ int main(int argc, char** argv) {
                     throw std::runtime_error("Too many files on stdin to process\n");
                 }
             }
-        } else if (strcmp(filename, "-r") == 0) {
-            // Read from line in. Linux only for now
-            files[count++] = "CODEGEN_LINEIN";
         } else files[count++] = filename;
 
         if(count == 0) throw std::runtime_error("No files given.\n");
 
-        fprintf(stderr, "No threading mode\n");
+        #ifdef WINDOWS
         // Threading doesn't work in windows yet.
         for(int i=0;i<count;i++) {
             codegen_response_t* response = codegen_file((char*)files[i].c_str(), start_offset, duration, i);
@@ -303,7 +259,7 @@ int main(int argc, char** argv) {
             free(output);
         }
         return 0;
-
+        #endif
 
         // Figure out how many threads to use based on # of cores
         int num_threads = getNumCores();
@@ -371,8 +327,6 @@ int main(int argc, char** argv) {
         free(parm);
         free(attr);
         return 0;
-
-//#endif // _WIN32
     }
     catch(std::runtime_error& ex) {
         fprintf(stderr, "%s\n", ex.what());
