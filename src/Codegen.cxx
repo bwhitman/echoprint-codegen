@@ -162,7 +162,7 @@ string Codegen::callback(const float *pcm, unsigned int numSamples, unsigned int
         this_offset, average_offset, offset_samples, pSubbandAnalysis->getNumFrames(), numSamples, samples_per_frame);
     
     // Only give adaptiveOnsets the frames that are new.
-    int new_frames = (int)((float)this_offset / samples_per_frame);
+    int new_frames = (int)((float)this_offset*1.5f / samples_per_frame);
     printf("Starting at %d frames from the end of subbandanalysis\n", new_frames);
     _pFingerprint->adaptiveOnsetsUpdate(pSubbandAnalysis, new_frames);
     _CodeString = createCodeString(_pFingerprint->getUpdateCodes());
